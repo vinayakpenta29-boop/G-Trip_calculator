@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.tripexpensecalculator'
+    namespace 'com.example.tripexpense'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.example.tripexpensecalculator"
+        applicationId "com.example.tripexpense"
         minSdk 24
         targetSdk 34
         versionCode 1
