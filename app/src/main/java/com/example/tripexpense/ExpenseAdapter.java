@@ -23,11 +23,13 @@ public class ExpenseAdapter extends ArrayAdapter<Expense> {
         }
 
         TextView tvTitle = convertView.findViewById(R.id.tvItemTitle);
+        TextView tvPayer = convertView.findViewById(R.id.tvItemPayer);
         TextView tvAmount = convertView.findViewById(R.id.tvItemAmount);
 
         if (expense != null) {
             tvTitle.setText(expense.getTitle());
-            tvAmount.setText(String.format("$%.2f", expense.getAmount()));
+            tvPayer.setText("Paid by: " + expense.getPayerName());
+            tvAmount.setText(String.format("₹%.2f", expense.getAmount()));
         }
 
         return convertView;
