@@ -281,4 +281,3 @@ public class MainActivity extends AppCompatActivity {
         tvResults.setText(results.toString());
     }
 }
-```</ScrollView>
