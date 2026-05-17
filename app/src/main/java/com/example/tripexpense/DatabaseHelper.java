@@ -11,14 +11,12 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "expenses.db";
-    private static final int DATABASE_VERSION = 3; // Upgraded for relation tables!
+    private static final int DATABASE_VERSION = 3; 
 
-    // Tables
     public static final String TABLE_MEMBERS = "members_table";
     public static final String TABLE_EXPENSES = "expense_table";
     public static final String TABLE_EXPENSE_MEMBERS = "expense_members_table";
 
-    // Columns
     public static final String COL_ID = "ID";
     public static final String COL_NAME = "NAME";
     public static final String COL_TITLE = "TITLE";
@@ -71,9 +69,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put(COL_AMOUNT, amount);
         cv.put(COL_PAYER_ID, payerId);
         
-        long expenseId = db.insert(TABLE_EXPENSES, null, cv); // Returns the new ID
+        long expenseId = db.insert(TABLE_EXPENSES, null, cv);
 
-        // Save who was involved
         for (int memberId : involvedMemberIds) {
             ContentValues linkCv = new ContentValues();
             linkCv.put(COL_EXP_ID_FK, expenseId);
@@ -101,7 +98,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 int payerId = eCursor.getInt(3);
                 String payerName = eCursor.getString(4);
 
-                // Fetch involved members for this expense
                 List<Member> involved = new ArrayList<>();
                 String memQuery = "SELECT m.ID, m.NAME FROM " + TABLE_EXPENSE_MEMBERS + " em " +
                                   "JOIN " + TABLE_MEMBERS + " m ON em.MEMBER_ID = m.ID " +
@@ -117,5 +113,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         eCursor.close();
         return expenseList;
+    }
+
+    // --- NEW METHODS FOR EDIT & DELETE --- //
+
+    public void deleteExpense(int expenseId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        // Delete the main expense
+        db.delete(TABLE_EXPENSES, COL_ID + " = ?", new String[]{String.valueOf(expenseId)});
+        // Delete the linked involved members
+        db.delete(TABLE_EXPENSE_MEMBERS, COL_EXP_ID_FK + " = ?", new String[]{String.valueOf(expenseId)});
+        db.close();
+    }
+
+    public void updateExpense(int expenseId, String title, double amount, int payerId, List<Integer> involvedMemberIds) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        
+        ContentValues cv = new ContentValues();
+        cv.put(COL_TITLE, title);
+        cv.put(COL_AMOUNT, amount);
+        cv.put(COL_PAYER_ID, payerId);
+        
+        db.update(TABLE_EXPENSES, cv, COL_ID + " = ?", new String[]{String.valueOf(expenseId)});
+        
+        // Wipe old involved members and insert the new selections
+        db.delete(TABLE_EXPENSE_MEMBERS, COL_EXP_ID_FK + " = ?", new String[]{String.valueOf(expenseId)});
+        for (int memberId : involvedMemberIds) {
+            ContentValues linkCv = new ContentValues();
+            linkCv.put(COL_EXP_ID_FK, expenseId);
+            linkCv.put(COL_MEM_ID_FK, memberId);
+            db.insert(TABLE_EXPENSE_MEMBERS, null, linkCv);
+        }
+        db.close();
     }
 }
