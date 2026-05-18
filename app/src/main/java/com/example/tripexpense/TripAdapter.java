@@ -17,13 +17,38 @@ public class TripAdapter extends ArrayAdapter<Trip> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         Trip trip = getItem(position);
+        
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_trip, parent, false);
         }
+        
         TextView tvTripName = convertView.findViewById(R.id.tvTripName);
+        TextView tvTripMembers = convertView.findViewById(R.id.tvTripMembers);
+        TextView tvTripTotal = convertView.findViewById(R.id.tvTripTotal);
+        TextView tvBadge = convertView.findViewById(R.id.tvBadge);
+
         if (trip != null) {
             tvTripName.setText(trip.getName());
+            
+            // Set Members
+            if (trip.getMemberNames() != null && !trip.getMemberNames().isEmpty()) {
+                tvTripMembers.setText("👤 " + trip.getMemberNames());
+            } else {
+                tvTripMembers.setText("👤 No members yet");
+            }
+            
+            // Set Amount
+            tvTripTotal.setText(String.format("Total ₹%.2f", trip.getTotalExpense()));
+
+            // Set Badge (Hide it if there are 0 expenses)
+            if (trip.getExpenseCount() > 0) {
+                tvBadge.setVisibility(View.VISIBLE);
+                tvBadge.setText(String.valueOf(trip.getExpenseCount()));
+            } else {
+                tvBadge.setVisibility(View.GONE);
+            }
         }
+        
         return convertView;
     }
 }
