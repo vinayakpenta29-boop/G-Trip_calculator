@@ -1,95 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/scrollView"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:orientation="vertical"
+    android:background="#FFFFFF">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <!-- 1. Add Members Section -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="1. Add Travelers"
-            android:textStyle="bold"
-            android:textSize="18sp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp">
-
-            <EditText
-                android:id="@+id/etMemberName"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Name (e.g. Alice)"
-                android:inputType="textPersonName" />
-
-            <Button
-                android:id="@+id/btnAddMember"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Add" />
-        </LinearLayout>
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:weightSum="3"
+        android:gravity="center">
 
         <TextView
-            android:id="@+id/tvMemberList"
-            android:layout_width="match_parent"
+            android:id="@+id/tabMembers"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Members: None"
-            android:layout_marginBottom="16dp"/>
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_tab_selected"
+            android:gravity="center"
+            android:paddingVertical="12dp"
+            android:text="Members"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#CCCCCC" android:layout_marginBottom="16dp"/>
-
-        <!-- 2. Add Expense Section -->
         <TextView
-            android:layout_width="match_parent"
+            android:id="@+id/tabExpenses"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="2. Log an Expense"
-            android:textStyle="bold"
-            android:textSize="18sp" />
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_tab_unselected"
+            android:gravity="center"
+            android:paddingVertical="12dp"
+            android:text="Expenses"
+            android:textColor="#333333"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Who paid?" android:layout_marginTop="8dp"/>
-        <Spinner android:id="@+id/spinnerPayer" android:layout_width="match_parent" android:layout_height="48dp"/>
-
-        <EditText android:id="@+id/etTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="What was it? (e.g. Bus Ticket)" android:inputType="text" />
-        <EditText android:id="@+id/etAmount" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Amount" android:inputType="numberDecimal" android:layout_marginBottom="8dp"/>
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Who was involved? (Split between:)" android:textStyle="bold" android:layout_marginTop="8dp"/>
-        
-        <!-- Checkboxes for members will be injected here automatically -->
-        <LinearLayout
-            android:id="@+id/llInvolvedMembers"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/tabSettlement"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="8dp"/>
-
-        <Button android:id="@+id/btnAddExpense" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Save Expense" android:layout_marginBottom="16dp"/>
-
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#CCCCCC" android:layout_marginBottom="16dp"/>
-
-        <!-- 3. Balances & Log -->
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="3. Balances &amp; Log" android:textStyle="bold" android:textSize="18sp" />
-
-        <Button android:id="@+id/btnCalculate" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Calculate Splits" android:backgroundTint="#2E7D32" android:textColor="#FFFFFF" android:layout_marginTop="8dp" android:layout_marginBottom="8dp"/>
-
-        <TextView android:id="@+id/tvResults" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Balances will appear here." android:textSize="16sp" android:layout_marginBottom="16dp"/>
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Expense History (Tap for details)" android:textStyle="bold" android:layout_marginBottom="8dp"/>
-
-        <ListView
-            android:id="@+id/lvExpenses"
-            android:layout_width="match_parent"
-            android:layout_height="300dp"
-            android:nestedScrollingEnabled="true"/>
-
+            android:layout_weight="1"
+            android:background="@drawable/bg_tab_unselected"
+            android:gravity="center"
+            android:paddingVertical="12dp"
+            android:text="Settlement"
+            android:textColor="#333333"
+            android:textSize="16sp"
+            android:textStyle="bold" />
     </LinearLayout>
-</ScrollView>
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/layoutMembers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Add Travelers" android:textStyle="bold" android:textSize="18sp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+                    <EditText android:id="@+id/etMemberName" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Name (e.g. Alice)" android:inputType="textPersonName" />
+                    <Button android:id="@+id/btnAddMember" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Add" />
+                </LinearLayout>
+                <TextView android:id="@+id/tvMemberList" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Members: None" android:layout_marginTop="16dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutExpenses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Who paid?" android:textStyle="bold"/>
+                <Spinner android:id="@+id/spinnerPayer" android:layout_width="match_parent" android:layout_height="48dp"/>
+                <EditText android:id="@+id/etTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="What was it? (e.g. Bus Ticket)" android:inputType="text" />
+                <EditText android:id="@+id/etAmount" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Amount" android:inputType="numberDecimal" android:layout_marginBottom="8dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Split Between:" android:textStyle="bold" android:layout_marginTop="8dp"/>
+                <LinearLayout android:id="@+id/llInvolvedMembers" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="8dp"/>
+                <Button android:id="@+id/btnAddExpense" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Save Expense" android:layout_marginBottom="16dp"/>
+                
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE" android:layout_marginBottom="16dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Expense History" android:textStyle="bold" android:layout_marginBottom="8dp"/>
+                
+                <ListView android:id="@+id/lvExpenses" android:layout_width="match_parent" android:layout_height="400dp" android:nestedScrollingEnabled="true"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutSettlement"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Trip Balances" android:textStyle="bold" android:textSize="18sp" />
+                <Button android:id="@+id/btnCalculate" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Calculate Splits" android:backgroundTint="#2E7D32" android:textColor="#FFFFFF" android:layout_marginTop="16dp" android:layout_marginBottom="16dp"/>
+                <TextView android:id="@+id/tvResults" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tap calculate to see balances." android:textSize="16sp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
