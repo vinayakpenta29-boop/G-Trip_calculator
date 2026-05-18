@@ -1,28 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:background="#FFFFFF"
-    android:padding="20dp"
-    android:gravity="center_vertical"
-    android:elevation="2dp">
+    android:background="@drawable/bg_trip_card"
+    android:padding="16dp"
+    android:layout_marginBottom="12dp">
 
     <TextView
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:id="@+id/ivTripIcon"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:background="@drawable/bg_tab_selected"
-        android:text="🌍"
+        android:text="👥"
         android:gravity="center"
-        android:textSize="20sp"
+        android:textSize="28sp"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
         android:layout_marginEnd="16dp"/>
 
-    <TextView
-        android:id="@+id/tvTripName"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Trip Name"
-        android:textSize="18sp"
+        android:layout_toEndOf="@id/ivTripIcon"
+        android:layout_toStartOf="@id/tvBadge"
+        android:orientation="vertical"
+        android:layout_centerVertical="true">
+
+        <TextView
+            android:id="@+id/tvTripName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Trip Name"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#111827"/>
+
+        <TextView
+            android:id="@+id/tvTripMembers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No members yet"
+            android:textSize="14sp"
+            android:textColor="#6B7280"
+            android:layout_marginTop="2dp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/tvTripTotal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Total ₹0.00"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#059669" 
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvBadge"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:background="@drawable/bg_tab_selected"
+        android:text="0"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
         android:textStyle="bold"
-        android:textColor="#333333"/>
-</LinearLayout>
+        android:gravity="center"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"/>
+</RelativeLayout>
