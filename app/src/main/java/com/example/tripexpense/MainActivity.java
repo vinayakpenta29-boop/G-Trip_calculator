@@ -1,6 +1,7 @@
 package com.example.tripexpense;
 
 import android.app.AlertDialog;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -23,6 +24,13 @@ public class MainActivity extends AppCompatActivity {
 
     private DatabaseHelper dbHelper;
     private ScrollView scrollView;
+    
+    // Tab Views
+    private TextView tabMembers, tabExpenses, tabSettlement;
+    // Section Layouts
+    private LinearLayout layoutMembers, layoutExpenses, layoutSettlement;
+
+    // UI Elements
     private EditText etMemberName, etTitle, etAmount;
     private TextView tvMemberList, tvResults;
     private Spinner spinnerPayer;
@@ -33,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private List<Member> memberList;
     private List<Expense> expenseList;
     
-    private int editingExpenseId = -1; // -1 means we are adding new. Any other number means we are editing.
+    private int editingExpenseId = -1; 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +49,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         dbHelper = new DatabaseHelper(this);
+
+        // Bind Tabs & Layouts
+        tabMembers = findViewById(R.id.tabMembers);
+        tabExpenses = findViewById(R.id.tabExpenses);
+        tabSettlement = findViewById(R.id.tabSettlement);
+        layoutMembers = findViewById(R.id.layoutMembers);
+        layoutExpenses = findViewById(R.id.layoutExpenses);
+        layoutSettlement = findViewById(R.id.layoutSettlement);
 
         scrollView = findViewById(R.id.scrollView);
         etMemberName = findViewById(R.id.etMemberName);
@@ -52,6 +68,11 @@ public class MainActivity extends AppCompatActivity {
         llInvolvedMembers = findViewById(R.id.llInvolvedMembers);
         lvExpenses = findViewById(R.id.lvExpenses);
         btnAddExpense = findViewById(R.id.btnAddExpense);
+
+        // Setup Tab Clicks
+        tabMembers.setOnClickListener(v -> switchTab(1));
+        tabExpenses.setOnClickListener(v -> switchTab(2));
+        tabSettlement.setOnClickListener(v -> switchTab(3));
 
         refreshMembers();
         refreshExpenseLog();
@@ -75,15 +96,47 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void switchTab(int tabIndex) {
+        // 1. Reset all tabs to unselected (Gray bg, Dark text)
+        tabMembers.setBackgroundResource(R.drawable.bg_tab_unselected);
+        tabMembers.setTextColor(Color.parseColor("#333333"));
+        tabExpenses.setBackgroundResource(R.drawable.bg_tab_unselected);
+        tabExpenses.setTextColor(Color.parseColor("#333333"));
+        tabSettlement.setBackgroundResource(R.drawable.bg_tab_unselected);
+        tabSettlement.setTextColor(Color.parseColor("#333333"));
+
+        // 2. Hide all layouts
+        layoutMembers.setVisibility(View.GONE);
+        layoutExpenses.setVisibility(View.GONE);
+        layoutSettlement.setVisibility(View.GONE);
+
+        // 3. Highlight selected tab (Purple bg, White text) and show layout
+        if (tabIndex == 1) {
+            tabMembers.setBackgroundResource(R.drawable.bg_tab_selected);
+            tabMembers.setTextColor(Color.WHITE);
+            layoutMembers.setVisibility(View.VISIBLE);
+        } else if (tabIndex == 2) {
+            tabExpenses.setBackgroundResource(R.drawable.bg_tab_selected);
+            tabExpenses.setTextColor(Color.WHITE);
+            layoutExpenses.setVisibility(View.VISIBLE);
+        } else if (tabIndex == 3) {
+            tabSettlement.setBackgroundResource(R.drawable.bg_tab_selected);
+            tabSettlement.setTextColor(Color.WHITE);
+            layoutSettlement.setVisibility(View.VISIBLE);
+            calculateSplits(); // Auto-calculate when opening the settlement tab!
+        }
+        
+        // Scroll to top when switching tabs
+        scrollView.scrollTo(0, 0);
+    }
+
     private void refreshMembers() {
         memberList = dbHelper.getAllMembers();
-        
         StringBuilder names = new StringBuilder("Members: ");
         llInvolvedMembers.removeAllViews(); 
 
         for (Member m : memberList) {
             names.append(m.getName()).append(", ");
-            
             CheckBox cb = new CheckBox(this);
             cb.setText(m.getName());
             cb.setTag(m.getId());
@@ -122,9 +175,7 @@ public class MainActivity extends AppCompatActivity {
         List<Integer> involvedIds = new ArrayList<>();
         for (int i = 0; i < llInvolvedMembers.getChildCount(); i++) {
             CheckBox cb = (CheckBox) llInvolvedMembers.getChildAt(i);
-            if (cb.isChecked()) {
-                involvedIds.add((Integer) cb.getTag());
-            }
+            if (cb.isChecked()) involvedIds.add((Integer) cb.getTag());
         }
 
         if (involvedIds.isEmpty()) {
@@ -135,24 +186,19 @@ public class MainActivity extends AppCompatActivity {
         double amount = Double.parseDouble(amountStr);
 
         if (editingExpenseId == -1) {
-            // Add New Expense
             dbHelper.insertExpense(title, amount, selectedPayer.getId(), involvedIds);
             Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
         } else {
-            // Update Existing Expense
             dbHelper.updateExpense(editingExpenseId, title, amount, selectedPayer.getId(), involvedIds);
             Toast.makeText(this, "Expense Updated", Toast.LENGTH_SHORT).show();
-            
-            // Reset state
             editingExpenseId = -1;
             btnAddExpense.setText("Save Expense");
         }
         
         etTitle.setText("");
         etAmount.setText("");
-        refreshMembers(); // This quickly resets all checkboxes to 'true'
+        refreshMembers();
         refreshExpenseLog();
-        calculateSplits(); // Auto-recalculate
     }
 
     private void showExpenseDetailsDialog(Expense expense) {
@@ -181,10 +227,8 @@ public class MainActivity extends AppCompatActivity {
             .setPositiveButton("Yes", (dialog, which) -> {
                 dbHelper.deleteExpense(expense.getId());
                 refreshExpenseLog();
-                calculateSplits();
                 Toast.makeText(this, "Expense Deleted", Toast.LENGTH_SHORT).show();
                 
-                // If user deleted an item they were currently editing, reset the form
                 if (editingExpenseId == expense.getId()) {
                     editingExpenseId = -1;
                     etTitle.setText("");
@@ -201,7 +245,6 @@ public class MainActivity extends AppCompatActivity {
         etTitle.setText(expense.getTitle());
         etAmount.setText(String.valueOf(expense.getAmount()));
         
-        // Set the payer spinner to the correct person
         for (int i = 0; i < spinnerPayer.getCount(); i++) {
             Member m = (Member) spinnerPayer.getItemAtPosition(i);
             if (m.getId() == expense.getPayerId()) {
@@ -210,7 +253,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         
-        // Uncheck boxes that shouldn't be checked
         List<Integer> involvedIds = new ArrayList<>();
         for (Member m : expense.getInvolvedMembers()) involvedIds.add(m.getId());
         
@@ -221,13 +263,14 @@ public class MainActivity extends AppCompatActivity {
         }
         
         btnAddExpense.setText("Update Expense");
-        
-        // Scroll to top of screen so user sees the edit form
-        scrollView.smoothScrollTo(0, 0);
+        scrollView.scrollTo(0, 0);
     }
 
     private void calculateSplits() {
-        if (memberList.isEmpty()) return;
+        if (memberList.isEmpty()) {
+            tvResults.setText("Add members first.");
+            return;
+        }
         expenseList = dbHelper.getFullExpenses();
 
         Map<Integer, Double> balances = new HashMap<>();
@@ -235,7 +278,6 @@ public class MainActivity extends AppCompatActivity {
 
         for (Expense e : expenseList) {
             balances.put(e.getPayerId(), balances.get(e.getPayerId()) + e.getAmount());
-
             double splitShare = e.getAmount() / e.getInvolvedMembers().size();
             for (Member involved : e.getInvolvedMembers()) {
                 balances.put(involved.getId(), balances.get(involved.getId()) - splitShare);
