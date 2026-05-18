@@ -24,13 +24,8 @@ public class MainActivity extends AppCompatActivity {
 
     private DatabaseHelper dbHelper;
     private ScrollView scrollView;
-    
-    // Tab Views
     private TextView tabMembers, tabExpenses, tabSettlement;
-    // Section Layouts
     private LinearLayout layoutMembers, layoutExpenses, layoutSettlement;
-
-    // UI Elements
     private EditText etMemberName, etTitle, etAmount;
     private TextView tvMemberList, tvResults;
     private Spinner spinnerPayer;
@@ -41,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private List<Member> memberList;
     private List<Expense> expenseList;
     
+    private int currentTripId = -1; // Tracks which trip we are viewing
     private int editingExpenseId = -1; 
 
     @Override
@@ -48,16 +44,29 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Fetch the Trip details passed from HomeActivity
+        currentTripId = getIntent().getIntExtra("TRIP_ID", -1);
+        String tripName = getIntent().getStringExtra("TRIP_NAME");
+
+        if (currentTripId == -1) {
+            Toast.makeText(this, "Error loading trip", Toast.LENGTH_SHORT).show();
+            finish(); // Close this screen if no trip was passed
+            return;
+        }
+
+        // Set the action bar title to the Trip Name
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(tripName);
+        }
+
         dbHelper = new DatabaseHelper(this);
 
-        // Bind Tabs & Layouts
         tabMembers = findViewById(R.id.tabMembers);
         tabExpenses = findViewById(R.id.tabExpenses);
         tabSettlement = findViewById(R.id.tabSettlement);
         layoutMembers = findViewById(R.id.layoutMembers);
         layoutExpenses = findViewById(R.id.layoutExpenses);
         layoutSettlement = findViewById(R.id.layoutSettlement);
-
         scrollView = findViewById(R.id.scrollView);
         etMemberName = findViewById(R.id.etMemberName);
         etTitle = findViewById(R.id.etTitle);
@@ -69,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
         lvExpenses = findViewById(R.id.lvExpenses);
         btnAddExpense = findViewById(R.id.btnAddExpense);
 
-        // Setup Tab Clicks
         tabMembers.setOnClickListener(v -> switchTab(1));
         tabExpenses.setOnClickListener(v -> switchTab(2));
         tabSettlement.setOnClickListener(v -> switchTab(3));
@@ -80,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnAddMember).setOnClickListener(v -> {
             String name = etMemberName.getText().toString().trim();
             if (!name.isEmpty()) {
-                dbHelper.insertMember(name);
+                dbHelper.insertMember(currentTripId, name); // Added currentTripId
                 etMemberName.setText("");
                 refreshMembers();
                 Toast.makeText(this, "Member Added", Toast.LENGTH_SHORT).show();
@@ -97,7 +105,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void switchTab(int tabIndex) {
-        // 1. Reset all tabs to unselected (Gray bg, Dark text)
         tabMembers.setBackgroundResource(R.drawable.bg_tab_unselected);
         tabMembers.setTextColor(Color.parseColor("#333333"));
         tabExpenses.setBackgroundResource(R.drawable.bg_tab_unselected);
@@ -105,12 +112,10 @@ public class MainActivity extends AppCompatActivity {
         tabSettlement.setBackgroundResource(R.drawable.bg_tab_unselected);
         tabSettlement.setTextColor(Color.parseColor("#333333"));
 
-        // 2. Hide all layouts
         layoutMembers.setVisibility(View.GONE);
         layoutExpenses.setVisibility(View.GONE);
         layoutSettlement.setVisibility(View.GONE);
 
-        // 3. Highlight selected tab (Purple bg, White text) and show layout
         if (tabIndex == 1) {
             tabMembers.setBackgroundResource(R.drawable.bg_tab_selected);
             tabMembers.setTextColor(Color.WHITE);
@@ -123,15 +128,13 @@ public class MainActivity extends AppCompatActivity {
             tabSettlement.setBackgroundResource(R.drawable.bg_tab_selected);
             tabSettlement.setTextColor(Color.WHITE);
             layoutSettlement.setVisibility(View.VISIBLE);
-            calculateSplits(); // Auto-calculate when opening the settlement tab!
+            calculateSplits();
         }
-        
-        // Scroll to top when switching tabs
         scrollView.scrollTo(0, 0);
     }
 
     private void refreshMembers() {
-        memberList = dbHelper.getAllMembers();
+        memberList = dbHelper.getAllMembers(currentTripId); // Fetches only this trip's members
         StringBuilder names = new StringBuilder("Members: ");
         llInvolvedMembers.removeAllViews(); 
 
@@ -155,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void refreshExpenseLog() {
-        expenseList = dbHelper.getFullExpenses();
+        expenseList = dbHelper.getFullExpenses(currentTripId); // Fetches only this trip's expenses
         ExpenseAdapter adapter = new ExpenseAdapter(this, expenseList);
         lvExpenses.setAdapter(adapter);
     }
@@ -186,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
         double amount = Double.parseDouble(amountStr);
 
         if (editingExpenseId == -1) {
-            dbHelper.insertExpense(title, amount, selectedPayer.getId(), involvedIds);
+            dbHelper.insertExpense(currentTripId, title, amount, selectedPayer.getId(), involvedIds); // Added currentTripId
             Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
         } else {
             dbHelper.updateExpense(editingExpenseId, title, amount, selectedPayer.getId(), involvedIds);
@@ -271,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
             tvResults.setText("Add members first.");
             return;
         }
-        expenseList = dbHelper.getFullExpenses();
+        expenseList = dbHelper.getFullExpenses(currentTripId); // Updated to use currentTripId
 
         Map<Integer, Double> balances = new HashMap<>();
         for (Member m : memberList) balances.put(m.getId(), 0.0);
