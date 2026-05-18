@@ -41,7 +41,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void refreshTrips() {
-        tripList = dbHelper.getAllTrips();
+        tripList = dbHelper.getTripsWithDetails();
         TripAdapter adapter = new TripAdapter(this, tripList);
         lvTrips.setAdapter(adapter);
     }
