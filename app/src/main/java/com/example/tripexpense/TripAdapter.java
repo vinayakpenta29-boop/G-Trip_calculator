@@ -30,22 +30,20 @@ public class TripAdapter extends ArrayAdapter<Trip> {
         if (trip != null) {
             tvTripName.setText(trip.getName());
             
-            // Set Members
             if (trip.getMemberNames() != null && !trip.getMemberNames().isEmpty()) {
                 tvTripMembers.setText("👤 " + trip.getMemberNames());
             } else {
                 tvTripMembers.setText("👤 No members yet");
             }
             
-            // Set Amount
             tvTripTotal.setText(String.format("Total ₹%.2f", trip.getTotalExpense()));
 
-            // Set Badge (Hide it if there are 0 expenses)
-            if (trip.getExpenseCount() > 0) {
+            // Now displays the Member Count
+            if (trip.getMemberCount() > 0) {
                 tvBadge.setVisibility(View.VISIBLE);
-                tvBadge.setText(String.valueOf(trip.getExpenseCount()));
+                tvBadge.setText(String.valueOf(trip.getMemberCount()));
             } else {
-                tvBadge.setVisibility(View.GONE);
+                tvBadge.setVisibility(View.GONE); // Hides badge if 0 members
             }
         }
         
