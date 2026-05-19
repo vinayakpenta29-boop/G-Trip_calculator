@@ -67,15 +67,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
     }
 
-        public List<Trip> getTripsWithDetails() {
+            public List<Trip> getTripsWithDetails() {
         List<Trip> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         
-        // This query fetches the Trip info, a comma-separated list of members, the total expense, and the expense count
+        // The query now counts members instead of expenses
         String query = "SELECT t." + COL_ID + ", t." + COL_NAME + ", " +
                        "(SELECT GROUP_CONCAT(" + COL_NAME + ", ', ') FROM " + TABLE_MEMBERS + " WHERE " + COL_TRIP_ID + " = t." + COL_ID + ") as Members, " +
                        "(SELECT SUM(" + COL_AMOUNT + ") FROM " + TABLE_EXPENSES + " WHERE " + COL_TRIP_ID + " = t." + COL_ID + ") as TotalExpense, " +
-                       "(SELECT COUNT(" + COL_ID + ") FROM " + TABLE_EXPENSES + " WHERE " + COL_TRIP_ID + " = t." + COL_ID + ") as ExpenseCount " +
+                       "(SELECT COUNT(" + COL_ID + ") FROM " + TABLE_MEMBERS + " WHERE " + COL_TRIP_ID + " = t." + COL_ID + ") as MemberCount " +
                        "FROM " + TABLE_TRIPS + " t";
 
         Cursor cursor = db.rawQuery(query, null);
@@ -83,17 +83,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             do {
                 int id = cursor.getInt(0);
                 String name = cursor.getString(1);
-                String members = cursor.getString(2); // May be null if no members
-                double total = cursor.getDouble(3);   // Will return 0.0 if no expenses
-                int count = cursor.getInt(4);
+                String members = cursor.getString(2); 
+                double total = cursor.getDouble(3);   
+                int count = cursor.getInt(4); // This now holds the Member Count
                 
                 list.add(new Trip(id, name, members, total, count));
             } while (cursor.moveToNext());
         }
         cursor.close();
         return list;
-        }
-    
+    }
 
     // --- MEMBERS (Now filtered by TRIP_ID) ---
     public void insertMember(int tripId, String name) {
