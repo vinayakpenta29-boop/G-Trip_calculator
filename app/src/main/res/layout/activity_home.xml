@@ -20,19 +20,36 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/tvTitle"
-        android:layout_above="@id/btnCreateTrip"
+        android:layout_above="@id/bottomButtons"
         android:divider="#00000000"
         android:dividerHeight="8dp"/>
 
-    <Button
-        android:id="@+id/btnCreateTrip"
+    <LinearLayout
+        android:id="@+id/bottomButtons"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:text="+ Create New Trip"
-        android:backgroundTint="#9D5BFE"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"/>
+        android:orientation="horizontal"
+        android:weightSum="2"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/btnJoinTrip"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:text="Join Trip"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#9D5BFE"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnCreateTrip"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:text="+ Create"
+            android:backgroundTint="#9D5BFE"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
 </RelativeLayout>
