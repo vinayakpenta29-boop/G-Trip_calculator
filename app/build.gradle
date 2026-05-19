@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -60,6 +61,13 @@ dependencies {
     // For TabLayout and ViewPager2 support:
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.viewpager2:viewpager2:1.1.0'
+
+    // 2. ADD FIREBASE DEPENDENCIES HERE
+    // Import the Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:32.8.0')
+
+    // Add Firestore (The Cloud Database)
+    implementation 'com.google.firebase:firebase-firestore'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
