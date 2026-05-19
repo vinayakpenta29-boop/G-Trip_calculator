@@ -18,6 +18,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.graphics.Bitmap;
+import android.widget.ImageView;
+import com.google.zxing.BarcodeFormat;
+import com.journeyapps.barcodescanner.BarcodeEncoder;
+
+
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -453,14 +459,31 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == 1) {
-            // Show the Share Code Popup
+            // Inflate our custom QR layout
+            View view = getLayoutInflater().inflate(R.layout.dialog_share_code, null);
+            ImageView ivQrCode = view.findViewById(R.id.ivQrCode);
+            TextView tvShareCode = view.findViewById(R.id.tvShareCode);
+
+            tvShareCode.setText(shareCode);
+
+            // Generate the QR Code Bitmap
+            try {
+                BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
+                Bitmap bitmap = barcodeEncoder.encodeBitmap(shareCode, BarcodeFormat.QR_CODE, 600, 600);
+                ivQrCode.setImageBitmap(bitmap);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            // Show the Dialog
             new AlertDialog.Builder(this)
-                .setTitle("Invite Friends")
-                .setMessage("Share this code to let others view the trip:\n\n" + shareCode)
-                .setPositiveButton("OK", null)
+                .setTitle("Share Code")
+                .setView(view)
+                .setPositiveButton("Close", null)
                 .show();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
+
 }
