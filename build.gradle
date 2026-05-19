@@ -5,15 +5,13 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.0.0'
+        // Use a single, compatible version of the Android Gradle Plugin
         classpath 'com.android.tools.build:gradle:8.1.1'
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0'
+        
+        // Google Services for Firebase
         classpath 'com.google.gms:google-services:4.4.1'
     }
-}
-
-plugins {
-    id 'com.android.application' version '8.0.0' apply false
 }
 
 allprojects {
