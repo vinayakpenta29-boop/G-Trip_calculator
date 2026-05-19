@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void enforcePermissions() {
         if (!isAdmin) {
-            // Viewers cannot see input boxes or add buttons
+            // 1. Hide the input fields and buttons
             etMemberName.setVisibility(View.GONE);
             btnAddMember.setVisibility(View.GONE);
             
@@ -138,14 +138,23 @@ public class MainActivity extends AppCompatActivity {
             findViewById(R.id.llInvolvedMembers).setVisibility(View.GONE);
             btnAddExpense.setVisibility(View.GONE);
             
-            // Hide the extra label text so the UI looks clean
-            TextView addMemberTitle = (TextView) ((LinearLayout) layoutMembers.getChildAt(0)).getChildAt(0);
-            addMemberTitle.setText("Trip Travelers");
-            
-            TextView addExpenseTitle = (TextView) ((LinearLayout) layoutExpenses.getChildAt(0)).getChildAt(0);
-            addExpenseTitle.setVisibility(View.GONE);
+            // 2. Safely change/hide the section titles without crashing!
+            try {
+                View memberTitle = layoutMembers.getChildAt(0);
+                if (memberTitle instanceof TextView) {
+                    ((TextView) memberTitle).setText("Trip Travelers");
+                }
+                
+                View expenseTitle = layoutExpenses.getChildAt(0);
+                if (expenseTitle instanceof TextView) {
+                    expenseTitle.setVisibility(View.GONE);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
+
 
     // --- FIREBASE REAL-TIME LISTENERS ---
 
