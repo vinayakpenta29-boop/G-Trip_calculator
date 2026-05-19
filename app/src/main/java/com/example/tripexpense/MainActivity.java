@@ -3,6 +3,8 @@ package com.example.tripexpense;
 import android.app.AlertDialog;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -15,6 +17,10 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +28,13 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    private DatabaseHelper dbHelper;
+    private FirebaseFirestore db;
+    private String currentTripId;
+    private String adminId;
+    private String myUserId;
+    private String shareCode;
+    private boolean isAdmin;
+
     private ScrollView scrollView;
     private TextView tabMembers, tabExpenses, tabSettlement;
     private LinearLayout layoutMembers, layoutExpenses, layoutSettlement;
@@ -31,43 +43,49 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinnerPayer;
     private LinearLayout llInvolvedMembers;
     private ListView lvExpenses;
-    private Button btnAddExpense;
+    private Button btnAddExpense, btnAddMember;
+
+    private List<Member> memberList = new ArrayList<>();
+    private List<Expense> expenseList = new ArrayList<>();
     
-    private List<Member> memberList;
-    private List<Expense> expenseList;
-    
-    private int currentTripId = -1; // Tracks which trip we are viewing
-    private int editingExpenseId = -1; 
+    private String editingExpenseId = "-1"; // Strings for Firebase IDs
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Fetch the Trip details passed from HomeActivity
-        currentTripId = getIntent().getIntExtra("TRIP_ID", -1);
-        String tripName = getIntent().getStringExtra("TRIP_NAME");
+        // 1. Setup Firebase & User Identity
+        db = FirebaseFirestore.getInstance();
+        myUserId = UserManager.getUserId(this);
 
-        if (currentTripId == -1) {
+        // 2. Get passed data
+        currentTripId = getIntent().getStringExtra("TRIP_ID");
+        String tripName = getIntent().getStringExtra("TRIP_NAME");
+        adminId = getIntent().getStringExtra("ADMIN_ID");
+        shareCode = getIntent().getStringExtra("SHARE_CODE");
+
+        if (currentTripId == null) {
             Toast.makeText(this, "Error loading trip", Toast.LENGTH_SHORT).show();
-            finish(); // Close this screen if no trip was passed
+            finish();
             return;
         }
 
-        // Set the action bar title to the Trip Name
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(tripName);
         }
 
-        dbHelper = new DatabaseHelper(this);
+        // 3. Determine if this user is the Admin
+        isAdmin = myUserId.equals(adminId);
 
+        // 4. Bind UI
+        scrollView = findViewById(R.id.scrollView);
         tabMembers = findViewById(R.id.tabMembers);
         tabExpenses = findViewById(R.id.tabExpenses);
         tabSettlement = findViewById(R.id.tabSettlement);
         layoutMembers = findViewById(R.id.layoutMembers);
         layoutExpenses = findViewById(R.id.layoutExpenses);
         layoutSettlement = findViewById(R.id.layoutSettlement);
-        scrollView = findViewById(R.id.scrollView);
         etMemberName = findViewById(R.id.etMemberName);
         etTitle = findViewById(R.id.etTitle);
         etAmount = findViewById(R.id.etAmount);
@@ -77,93 +95,127 @@ public class MainActivity extends AppCompatActivity {
         llInvolvedMembers = findViewById(R.id.llInvolvedMembers);
         lvExpenses = findViewById(R.id.lvExpenses);
         btnAddExpense = findViewById(R.id.btnAddExpense);
+        btnAddMember = findViewById(R.id.btnAddMember);
 
+        // 5. Apply Admin vs Viewer UI restrictions
+        enforcePermissions();
+
+        // 6. Setup Tabs
         tabMembers.setOnClickListener(v -> switchTab(1));
         tabExpenses.setOnClickListener(v -> switchTab(2));
         tabSettlement.setOnClickListener(v -> switchTab(3));
 
-        refreshMembers();
-        refreshExpenseLog();
-
-        findViewById(R.id.btnAddMember).setOnClickListener(v -> {
-            String name = etMemberName.getText().toString().trim();
-            if (!name.isEmpty()) {
-                dbHelper.insertMember(currentTripId, name); // Added currentTripId
-                etMemberName.setText("");
-                refreshMembers();
-                Toast.makeText(this, "Member Added", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnAddExpense.setOnClickListener(v -> saveExpense());
+        // 7. Button Listeners (Only functional if Admin)
+        btnAddMember.setOnClickListener(v -> saveMemberToCloud());
+        btnAddExpense.setOnClickListener(v -> saveExpenseToCloud());
         findViewById(R.id.btnCalculate).setOnClickListener(v -> calculateSplits());
 
         lvExpenses.setOnItemClickListener((parent, view, position, id) -> {
             Expense clickedExpense = expenseList.get(position);
             showExpenseDetailsDialog(clickedExpense);
         });
+
+        // 8. Start Real-time Listeners
+        listenForMembers();
+        listenForExpenses();
     }
 
-    private void switchTab(int tabIndex) {
-        tabMembers.setBackgroundResource(R.drawable.bg_tab_unselected);
-        tabMembers.setTextColor(Color.parseColor("#333333"));
-        tabExpenses.setBackgroundResource(R.drawable.bg_tab_unselected);
-        tabExpenses.setTextColor(Color.parseColor("#333333"));
-        tabSettlement.setBackgroundResource(R.drawable.bg_tab_unselected);
-        tabSettlement.setTextColor(Color.parseColor("#333333"));
-
-        layoutMembers.setVisibility(View.GONE);
-        layoutExpenses.setVisibility(View.GONE);
-        layoutSettlement.setVisibility(View.GONE);
-
-        if (tabIndex == 1) {
-            tabMembers.setBackgroundResource(R.drawable.bg_tab_selected);
-            tabMembers.setTextColor(Color.WHITE);
-            layoutMembers.setVisibility(View.VISIBLE);
-        } else if (tabIndex == 2) {
-            tabExpenses.setBackgroundResource(R.drawable.bg_tab_selected);
-            tabExpenses.setTextColor(Color.WHITE);
-            layoutExpenses.setVisibility(View.VISIBLE);
-        } else if (tabIndex == 3) {
-            tabSettlement.setBackgroundResource(R.drawable.bg_tab_selected);
-            tabSettlement.setTextColor(Color.WHITE);
-            layoutSettlement.setVisibility(View.VISIBLE);
-            calculateSplits();
+    private void enforcePermissions() {
+        if (!isAdmin) {
+            // Viewers cannot see input boxes or add buttons
+            etMemberName.setVisibility(View.GONE);
+            btnAddMember.setVisibility(View.GONE);
+            
+            findViewById(R.id.spinnerPayer).setVisibility(View.GONE);
+            etTitle.setVisibility(View.GONE);
+            etAmount.setVisibility(View.GONE);
+            findViewById(R.id.llInvolvedMembers).setVisibility(View.GONE);
+            btnAddExpense.setVisibility(View.GONE);
+            
+            // Hide the extra label text so the UI looks clean
+            TextView addMemberTitle = (TextView) ((LinearLayout) layoutMembers.getChildAt(0)).getChildAt(0);
+            addMemberTitle.setText("Trip Travelers");
+            
+            TextView addExpenseTitle = (TextView) ((LinearLayout) layoutExpenses.getChildAt(0)).getChildAt(0);
+            addExpenseTitle.setVisibility(View.GONE);
         }
-        scrollView.scrollTo(0, 0);
     }
 
-    private void refreshMembers() {
-        memberList = dbHelper.getAllMembers(currentTripId); // Fetches only this trip's members
-        StringBuilder names = new StringBuilder("Members: ");
-        llInvolvedMembers.removeAllViews(); 
+    // --- FIREBASE REAL-TIME LISTENERS ---
 
-        for (Member m : memberList) {
-            names.append(m.getName()).append(", ");
-            CheckBox cb = new CheckBox(this);
-            cb.setText(m.getName());
-            cb.setTag(m.getId());
-            cb.setChecked(true); 
-            llInvolvedMembers.addView(cb);
-        }
-
-        if (memberList.isEmpty()) {
-            tvMemberList.setText("Members: None");
-        } else {
-            tvMemberList.setText(names.substring(0, names.length() - 2)); 
-        }
-
-        ArrayAdapter<Member> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, memberList);
-        spinnerPayer.setAdapter(adapter);
+    private void listenForMembers() {
+        db.collection("trips").document(currentTripId).collection("members")
+          .addSnapshotListener((value, error) -> {
+              if (value != null) {
+                  memberList.clear();
+                  StringBuilder names = new StringBuilder();
+                  
+                  for (QueryDocumentSnapshot doc : value) {
+                      Member m = doc.toObject(Member.class);
+                      memberList.add(m);
+                      names.append(m.getName()).append(", ");
+                  }
+                  
+                  refreshMembersUI();
+                  
+                  // Update the Root Trip document so the Home Screen stays accurate
+                  if (isAdmin) {
+                      String joinedNames = names.length() > 0 ? names.substring(0, names.length() - 2) : "";
+                      db.collection("trips").document(currentTripId).update(
+                          "memberCount", memberList.size(),
+                          "memberNames", joinedNames
+                      );
+                  }
+              }
+          });
     }
 
-    private void refreshExpenseLog() {
-        expenseList = dbHelper.getFullExpenses(currentTripId); // Fetches only this trip's expenses
-        ExpenseAdapter adapter = new ExpenseAdapter(this, expenseList);
-        lvExpenses.setAdapter(adapter);
+    private void listenForExpenses() {
+        db.collection("trips").document(currentTripId).collection("expenses")
+          .addSnapshotListener((value, error) -> {
+              if (value != null) {
+                  expenseList.clear();
+                  double total = 0;
+                  
+                  for (QueryDocumentSnapshot doc : value) {
+                      Expense e = doc.toObject(Expense.class);
+                      expenseList.add(e);
+                      total += e.getAmount();
+                  }
+                  
+                  ExpenseAdapter adapter = new ExpenseAdapter(this, expenseList);
+                  lvExpenses.setAdapter(adapter);
+                  
+                  // Auto-update calculations when new data comes in
+                  calculateSplits();
+                  
+                  // Update the Root Trip document so Home Screen total stays accurate
+                  if (isAdmin) {
+                      db.collection("trips").document(currentTripId).update("totalExpense", total);
+                  }
+              }
+          });
     }
 
-    private void saveExpense() {
+    // --- CLOUD SAVE METHODS ---
+
+    private void saveMemberToCloud() {
+        String name = etMemberName.getText().toString().trim();
+        if (name.isEmpty()) return;
+
+        // Auto-generate a Firebase ID
+        String memberId = db.collection("trips").document(currentTripId).collection("members").document().getId();
+        Member newMember = new Member(memberId, name);
+
+        db.collection("trips").document(currentTripId).collection("members").document(memberId)
+          .set(newMember)
+          .addOnSuccessListener(aVoid -> {
+              etMemberName.setText("");
+              Toast.makeText(this, "Member Added", Toast.LENGTH_SHORT).show();
+          });
+    }
+
+    private void saveExpenseToCloud() {
         if (memberList.isEmpty()) return;
 
         String title = etTitle.getText().toString().trim();
@@ -175,33 +227,65 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        List<Integer> involvedIds = new ArrayList<>();
+        List<Member> involved = new ArrayList<>();
         for (int i = 0; i < llInvolvedMembers.getChildCount(); i++) {
             CheckBox cb = (CheckBox) llInvolvedMembers.getChildAt(i);
-            if (cb.isChecked()) involvedIds.add((Integer) cb.getTag());
+            if (cb.isChecked()) {
+                // Find the member object by ID
+                String mId = (String) cb.getTag();
+                for (Member m : memberList) {
+                    if (m.getId().equals(mId)) involved.add(m);
+                }
+            }
         }
 
-        if (involvedIds.isEmpty()) {
+        if (involved.isEmpty()) {
             Toast.makeText(this, "Select at least one involved member!", Toast.LENGTH_SHORT).show();
             return;
         }
 
         double amount = Double.parseDouble(amountStr);
 
-        if (editingExpenseId == -1) {
-            dbHelper.insertExpense(currentTripId, title, amount, selectedPayer.getId(), involvedIds); // Added currentTripId
-            Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
-        } else {
-            dbHelper.updateExpense(editingExpenseId, title, amount, selectedPayer.getId(), involvedIds);
-            Toast.makeText(this, "Expense Updated", Toast.LENGTH_SHORT).show();
-            editingExpenseId = -1;
-            btnAddExpense.setText("Save Expense");
+        // If editingExpenseId is "-1", generate a new ID. Otherwise, use the existing one to overwrite it.
+        String expenseId = editingExpenseId.equals("-1") ? 
+            db.collection("trips").document(currentTripId).collection("expenses").document().getId() : editingExpenseId;
+
+        Expense newExpense = new Expense(expenseId, title, amount, selectedPayer.getId(), selectedPayer.getName(), involved);
+
+        db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
+          .set(newExpense)
+          .addOnSuccessListener(aVoid -> {
+              etTitle.setText("");
+              etAmount.setText("");
+              editingExpenseId = "-1";
+              btnAddExpense.setText("Save Expense");
+              Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
+          });
+    }
+
+    // --- UI HELPERS ---
+
+    private void refreshMembersUI() {
+        StringBuilder names = new StringBuilder("Members: ");
+        llInvolvedMembers.removeAllViews();
+
+        for (Member m : memberList) {
+            names.append(m.getName()).append(", ");
+            CheckBox cb = new CheckBox(this);
+            cb.setText(m.getName());
+            cb.setTag(m.getId()); // Store string ID
+            cb.setChecked(true);
+            llInvolvedMembers.addView(cb);
         }
-        
-        etTitle.setText("");
-        etAmount.setText("");
-        refreshMembers();
-        refreshExpenseLog();
+
+        if (memberList.isEmpty()) {
+            tvMemberList.setText("Members: None");
+        } else {
+            tvMemberList.setText(names.substring(0, names.length() - 2));
+        }
+
+        ArrayAdapter<Member> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, memberList);
+        spinnerPayer.setAdapter(adapter);
     }
 
     private void showExpenseDetailsDialog(Expense expense) {
@@ -214,30 +298,26 @@ public class MainActivity extends AppCompatActivity {
                          "Paid By: " + expense.getPayerName() + "\n\n" +
                          "Split Between:\n" + involvedNames.toString();
 
-        new AlertDialog.Builder(this)
-                .setTitle(expense.getTitle())
-                .setMessage(message)
-                .setPositiveButton("Close", null)
-                .setNeutralButton("Edit", (dialog, which) -> loadExpenseForEditing(expense))
-                .setNegativeButton("Delete", (dialog, which) -> deleteExpenseConfirm(expense))
-                .show();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(expense.getTitle())
+               .setMessage(message)
+               .setPositiveButton("Close", null);
+
+        // Only show Edit/Delete if Admin
+        if (isAdmin) {
+            builder.setNeutralButton("Edit", (dialog, which) -> loadExpenseForEditing(expense))
+                   .setNegativeButton("Delete", (dialog, which) -> deleteExpenseConfirm(expense));
+        }
+        builder.show();
     }
 
     private void deleteExpenseConfirm(Expense expense) {
         new AlertDialog.Builder(this)
             .setTitle("Delete Expense?")
-            .setMessage("Are you sure you want to delete '" + expense.getTitle() + "'?")
+            .setMessage("Are you sure?")
             .setPositiveButton("Yes", (dialog, which) -> {
-                dbHelper.deleteExpense(expense.getId());
-                refreshExpenseLog();
+                db.collection("trips").document(currentTripId).collection("expenses").document(expense.getId()).delete();
                 Toast.makeText(this, "Expense Deleted", Toast.LENGTH_SHORT).show();
-                
-                if (editingExpenseId == expense.getId()) {
-                    editingExpenseId = -1;
-                    etTitle.setText("");
-                    etAmount.setText("");
-                    btnAddExpense.setText("Save Expense");
-                }
             })
             .setNegativeButton("No", null)
             .show();
@@ -250,40 +330,47 @@ public class MainActivity extends AppCompatActivity {
         
         for (int i = 0; i < spinnerPayer.getCount(); i++) {
             Member m = (Member) spinnerPayer.getItemAtPosition(i);
-            if (m.getId() == expense.getPayerId()) {
+            if (m.getId().equals(expense.getPayerId())) {
                 spinnerPayer.setSelection(i);
                 break;
             }
         }
         
-        List<Integer> involvedIds = new ArrayList<>();
+        List<String> involvedIds = new ArrayList<>();
         for (Member m : expense.getInvolvedMembers()) involvedIds.add(m.getId());
         
         for (int i = 0; i < llInvolvedMembers.getChildCount(); i++) {
             CheckBox cb = (CheckBox) llInvolvedMembers.getChildAt(i);
-            int memberId = (Integer) cb.getTag();
-            cb.setChecked(involvedIds.contains(memberId));
+            String mId = (String) cb.getTag();
+            cb.setChecked(involvedIds.contains(mId));
         }
         
         btnAddExpense.setText("Update Expense");
         scrollView.scrollTo(0, 0);
     }
 
+    // --- MATH & CALCULATIONS (Updated for String IDs) ---
+
     private void calculateSplits() {
         if (memberList.isEmpty()) {
             tvResults.setText("Add members first.");
             return;
         }
-        expenseList = dbHelper.getFullExpenses(currentTripId); // Updated to use currentTripId
 
-        Map<Integer, Double> balances = new HashMap<>();
+        Map<String, Double> balances = new HashMap<>();
         for (Member m : memberList) balances.put(m.getId(), 0.0);
 
         for (Expense e : expenseList) {
-            balances.put(e.getPayerId(), balances.get(e.getPayerId()) + e.getAmount());
+            // Give payer positive balance
+            double currentPayerBal = balances.containsKey(e.getPayerId()) ? balances.get(e.getPayerId()) : 0.0;
+            balances.put(e.getPayerId(), currentPayerBal + e.getAmount());
+
+            // Subtract split share from everyone involved
             double splitShare = e.getAmount() / e.getInvolvedMembers().size();
             for (Member involved : e.getInvolvedMembers()) {
-                balances.put(involved.getId(), balances.get(involved.getId()) - splitShare);
+                if (balances.containsKey(involved.getId())) {
+                    balances.put(involved.getId(), balances.get(involved.getId()) - splitShare);
+                }
             }
         }
 
@@ -324,5 +411,56 @@ public class MainActivity extends AppCompatActivity {
 
         if (!needsSettlement) results.append("Everyone is completely settled up! 🎉\n");
         tvResults.setText(results.toString());
+    }
+
+    private void switchTab(int tabIndex) {
+        tabMembers.setBackgroundResource(R.drawable.bg_tab_unselected);
+        tabMembers.setTextColor(Color.parseColor("#333333"));
+        tabExpenses.setBackgroundResource(R.drawable.bg_tab_unselected);
+        tabExpenses.setTextColor(Color.parseColor("#333333"));
+        tabSettlement.setBackgroundResource(R.drawable.bg_tab_unselected);
+        tabSettlement.setTextColor(Color.parseColor("#333333"));
+
+        layoutMembers.setVisibility(View.GONE);
+        layoutExpenses.setVisibility(View.GONE);
+        layoutSettlement.setVisibility(View.GONE);
+
+        if (tabIndex == 1) {
+            tabMembers.setBackgroundResource(R.drawable.bg_tab_selected);
+            tabMembers.setTextColor(Color.WHITE);
+            layoutMembers.setVisibility(View.VISIBLE);
+        } else if (tabIndex == 2) {
+            tabExpenses.setBackgroundResource(R.drawable.bg_tab_selected);
+            tabExpenses.setTextColor(Color.WHITE);
+            layoutExpenses.setVisibility(View.VISIBLE);
+        } else if (tabIndex == 3) {
+            tabSettlement.setBackgroundResource(R.drawable.bg_tab_selected);
+            tabSettlement.setTextColor(Color.WHITE);
+            layoutSettlement.setVisibility(View.VISIBLE);
+        }
+        scrollView.scrollTo(0, 0);
+    }
+
+    // --- SHARE CODE MENU BAR ---
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Create a "Share" button in the top right Action Bar
+        menu.add(0, 1, 0, "Share Code").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == 1) {
+            // Show the Share Code Popup
+            new AlertDialog.Builder(this)
+                .setTitle("Invite Friends")
+                .setMessage("Share this code to let others view the trip:\n\n" + shareCode)
+                .setPositiveButton("OK", null)
+                .show();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
