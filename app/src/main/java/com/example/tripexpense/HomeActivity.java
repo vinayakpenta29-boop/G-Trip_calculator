@@ -101,7 +101,7 @@ public class HomeActivity extends AppCompatActivity {
           .addOnFailureListener(e -> Toast.makeText(this, "Failed to create trip", Toast.LENGTH_SHORT).show());
     }
 
-    private void showJoinTripDialog() {
+        private void showJoinTripDialog() {
         EditText input = new EditText(this);
         input.setHint("Enter 8-character Share Code");
 
@@ -109,7 +109,9 @@ public class HomeActivity extends AppCompatActivity {
             .setTitle("Join Trip")
             .setView(input)
             .setPositiveButton("Join", (dialog, which) -> {
-                String code = input.getText().toString().trim();
+                // FIX: Automatically trim spaces and convert to lowercase!
+                String code = input.getText().toString().trim().toLowerCase();
+                
                 if (!code.isEmpty()) {
                     joinTripWithCode(code);
                 }
@@ -117,6 +119,7 @@ public class HomeActivity extends AppCompatActivity {
             .setNegativeButton("Cancel", null)
             .show();
     }
+
 
     private void joinTripWithCode(String code) {
         // Search the cloud for a trip with this exact share code
