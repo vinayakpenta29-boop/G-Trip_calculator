@@ -7,6 +7,11 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+
+import androidx.activity.result.ActivityResultLauncher;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
+
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
@@ -101,7 +106,21 @@ public class HomeActivity extends AppCompatActivity {
           .addOnFailureListener(e -> Toast.makeText(this, "Failed to create trip", Toast.LENGTH_SHORT).show());
     }
 
-        private void showJoinTripDialog() {
+        // 1. The QR Scanner Launcher
+    private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(
+        new ScanContract(),
+        result -> {
+            if (result.getContents() != null) {
+                // If a QR code was successfully scanned, join the trip automatically!
+                String scannedCode = result.getContents().trim().toLowerCase();
+                joinTripWithCode(scannedCode);
+            } else {
+                Toast.makeText(this, "Scan cancelled", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+    // 2. Updated Join Dialog
+    private void showJoinTripDialog() {
         EditText input = new EditText(this);
         input.setHint("Enter 8-character Share Code");
 
@@ -109,16 +128,23 @@ public class HomeActivity extends AppCompatActivity {
             .setTitle("Join Trip")
             .setView(input)
             .setPositiveButton("Join", (dialog, which) -> {
-                // FIX: Automatically trim spaces and convert to lowercase!
                 String code = input.getText().toString().trim().toLowerCase();
-                
                 if (!code.isEmpty()) {
                     joinTripWithCode(code);
                 }
             })
+            // ADDED: A Neutral button to launch the Camera Scanner
+            .setNeutralButton("Scan QR", (dialog, which) -> {
+                ScanOptions options = new ScanOptions();
+                options.setPrompt("Scan a Trip QR Code");
+                options.setBeepEnabled(true);
+                options.setOrientationLocked(false);
+                barcodeLauncher.launch(options);
+            })
             .setNegativeButton("Cancel", null)
             .show();
     }
+
 
 
     private void joinTripWithCode(String code) {
