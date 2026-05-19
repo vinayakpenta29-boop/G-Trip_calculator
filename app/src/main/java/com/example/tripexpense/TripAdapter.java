@@ -36,7 +36,7 @@ public class TripAdapter extends ArrayAdapter<Trip> {
                 tvTripMembers.setText("👤 No members yet");
             }
             
-            tvTripTotal.setText(String.format("Total ₹%.2f", trip.getTotalExpense()));
+            tvTripTotal.setText(String.format("Total Expenses ₹%.2f", trip.getTotalExpense()));
 
             // Now displays the Member Count
             if (trip.getMemberCount() > 0) {
