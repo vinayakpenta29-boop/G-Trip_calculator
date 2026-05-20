@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.TripExpense" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        
+        <item name="colorPrimary">@color/purple_primary</item>
+        
+        <item name="colorPrimaryDark">@color/purple_dark</item>
+        
+        <item name="colorOnPrimary">@color/white</item>
+        
+    </style>
+</resources>
