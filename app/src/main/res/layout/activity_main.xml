@@ -233,12 +233,40 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <ListView
-                    android:id="@+id/lvExpenses"
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
-                    android:layout_height="400dp"
-                    android:divider="@null"
-                    android:dividerHeight="8dp" />
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingTop="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Expense History"
+                            android:textColor="@color/text_dark"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <ListView
+                            android:id="@+id/lvExpenses"
+                            android:layout_width="match_parent"
+                            android:layout_height="400dp"
+                            android:divider="@color/divider_color"
+                            android:dividerHeight="1dp"
+                            android:paddingHorizontal="16dp"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
             </LinearLayout>
 
             <LinearLayout
