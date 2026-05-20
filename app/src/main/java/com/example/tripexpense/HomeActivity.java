@@ -7,6 +7,8 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 
 import androidx.activity.result.ActivityResultLauncher;
 import com.journeyapps.barcodescanner.ScanContract;
@@ -121,24 +123,24 @@ public class HomeActivity extends AppCompatActivity {
 
     // 2. Updated Join Dialog
     private void showJoinTripDialog() {
-        EditText input = new EditText(this);
-        input.setHint("Enter 8-character Share Code");
+        // 1. Inflate the beautiful new layout
+        View view = getLayoutInflater().inflate(R.layout.dialog_join_trip, null);
+        EditText input = view.findViewById(R.id.etShareCode);
 
-        new AlertDialog.Builder(this)
-            .setTitle("Join Trip")
-            .setView(input)
+        // 2. Use the Material Builder instead of the old AlertDialog
+        new MaterialAlertDialogBuilder(this)
+            .setView(view)
             .setPositiveButton("Join", (dialog, which) -> {
                 String code = input.getText().toString().trim().toLowerCase();
                 if (!code.isEmpty()) {
                     joinTripWithCode(code);
                 }
             })
-            // ADDED: A Neutral button to launch the Camera Scanner
             .setNeutralButton("Scan QR", (dialog, which) -> {
                 ScanOptions options = new ScanOptions();
                 options.setPrompt("Scan a Trip QR Code");
                 options.setBeepEnabled(true);
-                options.setOrientationLocked(false); 
+                options.setOrientationLocked(false);
                 options.setCaptureActivity(CaptureAct.class);
                 barcodeLauncher.launch(options);
             })
@@ -146,8 +148,7 @@ public class HomeActivity extends AppCompatActivity {
             .show();
     }
 
-
-
+    
     private void joinTripWithCode(String code) {
         // Search the cloud for a trip with this exact share code
         db.collection("trips")
