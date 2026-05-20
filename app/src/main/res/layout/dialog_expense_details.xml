@@ -64,7 +64,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="• Name 1\n• Name 2"
-        android:textColor="@color/text_gray"
+        android:textColor="@color/member_magenta"
         android:textSize="16sp"
         android:lineSpacingExtra="6dp"/>
 
