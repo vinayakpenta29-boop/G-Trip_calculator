@@ -46,7 +46,7 @@
             android:layout_below="@id/tvTripName"
             android:layout_marginTop="8dp"
             android:text="👤 Members..."
-            android:textColor="@color/text_gray"
+            android:textColor="@color/member_magenta"
             android:textSize="14sp"
             android:lineSpacingExtra="2dp"/>
 
