@@ -142,6 +142,7 @@
                             android:layout_height="wrap_content"
                             android:text="No members yet."
                             android:textColor="@color/member_magenta"
+                            android:textStyle="bold"
                             android:textSize="16sp"
                             android:lineSpacingExtra="6dp" />
                     </LinearLayout>
@@ -260,10 +261,11 @@
                         <ListView
                             android:id="@+id/lvExpenses"
                             android:layout_width="match_parent"
-                            android:layout_height="400dp"
+                            android:layout_height="wrap_content" 
                             android:divider="@color/divider_color"
                             android:dividerHeight="1dp"
-                            android:paddingHorizontal="16dp"/>
+                            android:paddingHorizontal="16dp"
+                            android:paddingBottom="16dp"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
