@@ -27,7 +27,7 @@
             android:layout_height="wrap_content"
             android:text="Your Trips"
             android:textColor="@color/text_dark"
-            android:textSize="32sp"
+            android:textSize="24sp"
             android:textStyle="bold"
             android:fontFamily="sans-serif-black"
             android:layout_marginTop="4dp"/>
