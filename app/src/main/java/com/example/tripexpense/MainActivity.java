@@ -17,6 +17,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 
 import android.graphics.Bitmap;
 import android.widget.ImageView;
@@ -312,27 +314,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showExpenseDetailsDialog(Expense expense) {
+        // 1. Inflate our custom premium layout
+        View view = getLayoutInflater().inflate(R.layout.dialog_expense_details, null);
+
+        // 2. Link the XML elements to Java
+        TextView tvDialogTitle = view.findViewById(R.id.tvDialogTitle);
+        TextView tvDialogAmount = view.findViewById(R.id.tvDialogAmount);
+        TextView tvDialogPayer = view.findViewById(R.id.tvDialogPayer);
+        TextView tvDialogSplitMembers = view.findViewById(R.id.tvDialogSplitMembers);
+
+        // 3. Populate the data
+        tvDialogTitle.setText(expense.getTitle());
+        tvDialogAmount.setText("₹" + String.format("%.2f", expense.getAmount()));
+        tvDialogPayer.setText("Paid by " + expense.getPayerName());
+
         StringBuilder involvedNames = new StringBuilder();
         for (Member m : expense.getInvolvedMembers()) {
-            involvedNames.append("- ").append(m.getName()).append("\n");
+            involvedNames.append("• ").append(m.getName()).append("\n");
         }
+        tvDialogSplitMembers.setText(involvedNames.toString().trim());
 
-        String message = "Amount: ₹" + String.format("%.2f", expense.getAmount()) + "\n" +
-                         "Paid By: " + expense.getPayerName() + "\n\n" +
-                         "Split Between:\n" + involvedNames.toString();
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(expense.getTitle())
-               .setMessage(message)
+        // 4. Build the premium Material Dialog
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
+               .setView(view)
                .setPositiveButton("Close", null);
 
-        // Only show Edit/Delete if Admin
+        // Only show Edit/Delete if the user is the Admin
         if (isAdmin) {
             builder.setNeutralButton("Edit", (dialog, which) -> loadExpenseForEditing(expense))
                    .setNegativeButton("Delete", (dialog, which) -> deleteExpenseConfirm(expense));
         }
+        
         builder.show();
     }
+
 
     private void deleteExpenseConfirm(Expense expense) {
         new AlertDialog.Builder(this)
