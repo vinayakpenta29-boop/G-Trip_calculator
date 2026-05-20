@@ -1,72 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_trip_card"
-    android:padding="16dp"
-    android:layout_marginBottom="12dp">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/white"
+    app:strokeWidth="0dp">
 
-    <TextView
-        android:id="@+id/ivTripIcon"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_tab_selected"
-        android:text="👥"
-        android:gravity="center"
-        android:textSize="28sp"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
-        android:layout_marginEnd="16dp"/>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/ivTripIcon"
-        android:layout_toStartOf="@id/tvBadge"
-        android:orientation="vertical"
-        android:layout_centerVertical="true">
+        android:padding="20dp">
 
         <TextView
             android:id="@+id/tvTripName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Trip Name"
-            android:textSize="18sp"
+            android:textColor="@color/text_dark"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="#111827"/>
+            android:fontFamily="sans-serif-medium"/>
+
+        <TextView
+            android:id="@+id/tvBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/bg_badge"
+            android:text="2"
+            android:textColor="@color/purple_dark"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="6dp"/>
 
         <TextView
             android:id="@+id/tvTripMembers"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="No members yet"
+            android:layout_below="@id/tvTripName"
+            android:layout_marginTop="8dp"
+            android:text="👤 Members..."
+            android:textColor="@color/text_gray"
             android:textSize="14sp"
-            android:textColor="#6B7280"
-            android:layout_marginTop="2dp"
-            android:maxLines="1"
-            android:ellipsize="end"/>
+            android:lineSpacingExtra="2dp"/>
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_below="@id/tvTripMembers"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="12dp"
+            android:background="@color/divider_color"/>
 
         <TextView
             android:id="@+id/tvTripTotal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Total ₹0.00"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="#059669" 
-            android:layout_marginTop="4dp"/>
-    </LinearLayout>
+            android:layout_below="@id/divider"
+            android:text="Total Expenses: ₹0.00"
+            android:textColor="@color/purple_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
 
-    <TextView
-        android:id="@+id/tvBadge"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:background="@drawable/bg_tab_selected"
-        android:text="0"
-        android:textColor="#FFFFFF"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"/>
-</RelativeLayout>
+    </RelativeLayout>
+</com.google.android.material.card.MaterialCardView>
