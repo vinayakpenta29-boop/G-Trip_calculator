@@ -138,7 +138,8 @@ public class HomeActivity extends AppCompatActivity {
                 ScanOptions options = new ScanOptions();
                 options.setPrompt("Scan a Trip QR Code");
                 options.setBeepEnabled(true);
-                options.setOrientationLocked(false);
+                options.setOrientationLocked(false); 
+                options.setCaptureActivity(CaptureAct.class);
                 barcodeLauncher.launch(options);
             })
             .setNegativeButton("Cancel", null)
