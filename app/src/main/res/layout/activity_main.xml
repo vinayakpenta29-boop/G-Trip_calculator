@@ -1,57 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#FFFFFF">
+    android:background="@color/bg_screen">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_input"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:weightSum="3"
-        android:gravity="center">
+        android:padding="4dp">
 
         <TextView
             android:id="@+id/tabMembers"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginEnd="8dp"
             android:background="@drawable/bg_tab_selected"
             android:gravity="center"
-            android:paddingVertical="12dp"
             android:text="Members"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textColor="@color/white"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tabExpenses"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginEnd="8dp"
             android:background="@drawable/bg_tab_unselected"
             android:gravity="center"
-            android:paddingVertical="12dp"
             android:text="Expenses"
-            android:textColor="#333333"
-            android:textSize="16sp"
+            android:textColor="@color/text_dark"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tabSettlement"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@drawable/bg_tab_unselected"
             android:gravity="center"
-            android:paddingVertical="12dp"
             android:text="Settlement"
-            android:textColor="#333333"
-            android:textSize="16sp"
+            android:textColor="@color/text_dark"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -59,26 +52,100 @@
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingHorizontal="16dp">
+        android:fillViewport="true">
 
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="40dp">
 
             <LinearLayout
                 android:id="@+id/layoutMembers"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="visible">
+                android:orientation="vertical">
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Add Travelers" android:textStyle="bold" android:textSize="18sp" />
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
-                    <EditText android:id="@+id/etMemberName" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Name (e.g. Alice)" android:inputType="textPersonName" />
-                    <Button android:id="@+id/btnAddMember" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Add" />
-                </LinearLayout>
-                <TextView android:id="@+id/tvMemberList" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Members: None" android:layout_marginTop="16dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Add to Trip"
+                    android:textColor="@color/text_dark"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp"
+                    android:layout_marginStart="4dp"/>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp"
+                    android:layout_marginBottom="24dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <EditText
+                            android:id="@+id/etMemberName"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_input"
+                            android:hint="Enter member name"
+                            android:paddingHorizontal="16dp"
+                            android:textColor="@color/text_dark"
+                            android:layout_marginBottom="16dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAddMember"
+                            android:layout_width="match_parent"
+                            android:layout_height="55dp"
+                            android:text="+ Add Member"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="@color/purple_primary"
+                            app:cornerRadius="12dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Current Travelers"
+                            android:textColor="@color/text_dark"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="12dp" />
+
+                        <TextView
+                            android:id="@+id/tvMemberList"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="No members yet."
+                            android:textColor="@color/text_gray"
+                            android:textSize="16sp"
+                            android:lineSpacingExtra="6dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
             <LinearLayout
@@ -88,18 +155,90 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Who paid?" android:textStyle="bold"/>
-                <Spinner android:id="@+id/spinnerPayer" android:layout_width="match_parent" android:layout_height="48dp"/>
-                <EditText android:id="@+id/etTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="What was it? (e.g. Bus Ticket)" android:inputType="text" />
-                <EditText android:id="@+id/etAmount" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Amount" android:inputType="numberDecimal" android:layout_marginBottom="8dp"/>
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Split Between:" android:textStyle="bold" android:layout_marginTop="8dp"/>
-                <LinearLayout android:id="@+id/llInvolvedMembers" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="8dp"/>
-                <Button android:id="@+id/btnAddExpense" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Save Expense" android:layout_marginBottom="16dp"/>
-                
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE" android:layout_marginBottom="16dp"/>
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Expense History" android:textStyle="bold" android:layout_marginBottom="8dp"/>
-                
-                <ListView android:id="@+id/lvExpenses" android:layout_width="match_parent" android:layout_height="400dp" android:nestedScrollingEnabled="true"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Log New Expense"
+                    android:textColor="@color/text_dark"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp"
+                    android:layout_marginStart="4dp"/>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp"
+                    android:layout_marginBottom="24dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <Spinner
+                            android:id="@+id/spinnerPayer"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_input"
+                            android:layout_marginBottom="12dp"/>
+
+                        <EditText
+                            android:id="@+id/etTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_input"
+                            android:hint="What was it for?"
+                            android:paddingHorizontal="16dp"
+                            android:layout_marginBottom="12dp" />
+
+                        <EditText
+                            android:id="@+id/etAmount"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_input"
+                            android:hint="Amount (₹)"
+                            android:inputType="numberDecimal"
+                            android:paddingHorizontal="16dp"
+                            android:layout_marginBottom="16dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Split Between:"
+                            android:textColor="@color/text_dark"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="8dp"/>
+
+                        <LinearLayout
+                            android:id="@+id/llInvolvedMembers"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="16dp"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAddExpense"
+                            android:layout_width="match_parent"
+                            android:layout_height="55dp"
+                            android:text="Save Expense"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="@color/purple_primary"
+                            app:cornerRadius="12dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <ListView
+                    android:id="@+id/lvExpenses"
+                    android:layout_width="match_parent"
+                    android:layout_height="400dp"
+                    android:divider="@null"
+                    android:dividerHeight="8dp" />
             </LinearLayout>
 
             <LinearLayout
@@ -109,11 +248,36 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Trip Balances" android:textStyle="bold" android:textSize="18sp" />
-                <Button android:id="@+id/btnCalculate" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Calculate Splits" android:backgroundTint="#2E7D32" android:textColor="#FFFFFF" android:layout_marginTop="16dp" android:layout_marginBottom="16dp"/>
-                <TextView android:id="@+id/tvResults" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tap calculate to see balances." android:textSize="16sp"/>
-            </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCalculate"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:text="Calculate Splits"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/purple_primary"
+                    app:cornerRadius="16dp"
+                    android:layout_marginBottom="24dp"/>
 
-        </LinearLayout>
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
+
+                    <TextView
+                        android:id="@+id/tvResults"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="20dp"
+                        android:text="Press calculate to see who owes whom."
+                        android:textColor="@color/text_dark"
+                        android:textSize="16sp"
+                        android:lineSpacingExtra="4dp"/>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </FrameLayout>
     </ScrollView>
 </LinearLayout>
