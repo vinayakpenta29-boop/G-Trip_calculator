@@ -142,6 +142,7 @@
                             android:layout_height="wrap_content"
                             android:text="No members yet."
                             android:textColor="@color/member_magenta"
+                            android:fontFamily="sans-serif-condensed" 
                             android:textStyle="bold"
                             android:textSize="16sp"
                             android:lineSpacingExtra="6dp" />
