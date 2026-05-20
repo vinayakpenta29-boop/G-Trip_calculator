@@ -218,6 +218,14 @@ public class MainActivity extends AppCompatActivity {
         String name = etMemberName.getText().toString().trim();
         if (name.isEmpty()) return;
 
+        for (Member m : memberList) {
+        // equalsIgnoreCase makes sure "Alice" and "alice" are treated as the same
+        if (m.getName().equalsIgnoreCase(name)) {
+            Toast.makeText(this, "This member already exists!", Toast.LENGTH_SHORT).show();
+            return; // Stop the code here, do not save to Firebase
+            }
+        }
+
         // Auto-generate a Firebase ID
         String memberId = db.collection("trips").document(currentTripId).collection("members").document().getId();
         Member newMember = new Member(memberId, name);
