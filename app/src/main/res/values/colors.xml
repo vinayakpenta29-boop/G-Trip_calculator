@@ -11,4 +11,7 @@
     <color name="text_gray">#6B7280</color>
     
     <color name="divider_color">#E5E7EB</color>
+
+    <color name="member_magenta">#990F4B</color>
+    
 </resources>
