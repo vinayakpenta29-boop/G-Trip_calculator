@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.firebase.auth.FirebaseAuth;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -192,7 +193,8 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void showDeleteTripSelectionDialog() {
-        String currentUserId = mAuth.getCurrentUser().getUid();
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
         List<Trip> adminTrips = new ArrayList<>();
         List<String> tripNames = new ArrayList<>();
 
