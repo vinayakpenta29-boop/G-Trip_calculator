@@ -437,6 +437,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        StringBuilder results = new StringBuilder("💸 HOW TO SETTLE UP:\n\n");
         
         class Balance {
             String name; double amount;
