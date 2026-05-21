@@ -603,7 +603,7 @@ public class MainActivity extends AppCompatActivity {
             tvPaid.setTextColor(ContextCompat.getColor(this, R.color.text_dark));
             tvPaid.setGravity(Gravity.CENTER);
             tvPaid.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
-            tvPaid.setTextSize(11f);
+            tvPaid.setTextSize(12f);
 
             // Column 3: Total Share
             TextView tvShare = new TextView(this);
@@ -611,13 +611,13 @@ public class MainActivity extends AppCompatActivity {
             tvShare.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
             tvShare.setGravity(Gravity.CENTER);
             tvShare.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
-            tvShare.setTextSize(11f);
+            tvShare.setTextSize(12f);
 
             // Column 4: Balance (Color Coded!)
             TextView tvBalance = new TextView(this);
             tvBalance.setGravity(Gravity.END);
             tvBalance.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
-            tvBalance.setTextSize(11f);
+            tvBalance.setTextSize(12f);
 
             if (balance > 0.01) {
                 // They paid more than their share: They get money BACK (Green)
