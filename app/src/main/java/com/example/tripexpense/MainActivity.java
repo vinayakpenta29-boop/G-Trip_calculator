@@ -437,8 +437,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        StringBuilder results = new StringBuilder("💸 HOW TO SETTLE UP:\n\n");
-
+        
         class Balance {
             String name; double amount;
             Balance(String name, double amount) { this.name = name; this.amount = amount; }
@@ -474,6 +473,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (!needsSettlement) results.append("Everyone is completely settled up! 🎉\n");
         tvResults.setText(results.toString());
+
+        updateSummaryTable();
     }
 
     private void switchTab(int tabIndex) {
