@@ -141,7 +141,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="No members yet."
-                            android:textColor="@color/member_magenta"
+                            android:textColor="@color/purple_primary"
                             android:fontFamily="sans-serif-monospace" 
                             android:textStyle="bold"
                             android:textSize="16sp"
