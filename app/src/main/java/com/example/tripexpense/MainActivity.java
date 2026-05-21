@@ -37,6 +37,7 @@ import com.journeyapps.barcodescanner.BarcodeEncoder;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -209,12 +210,15 @@ public class MainActivity extends AppCompatActivity {
                       expenseList.add(e);
                       total += e.getAmount();
                   }
+
+                  Collections.sort(expenseList, (e1, e2) -> Long.compare(e2.getTimestamp(), e1.getTimestamp()));
                   
                   ExpenseAdapter adapter = new ExpenseAdapter(this, expenseList);
                   lvExpenses.setAdapter(adapter);
                   
                   // Auto-update calculations when new data comes in
                   calculateSplits();
+                  updateSummaryTable();
                   
                   // Update the Root Trip document so Home Screen total stays accurate
                   if (isAdmin) {
@@ -290,6 +294,8 @@ public class MainActivity extends AppCompatActivity {
             db.collection("trips").document(currentTripId).collection("expenses").document().getId() : editingExpenseId;
 
         Expense newExpense = new Expense(expenseId, title, amount, selectedPayer.getId(), selectedPayer.getName(), involved);
+
+        newExpense.setTimestamp(System.currentTimeMillis());
 
         db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
           .set(newExpense)
