@@ -7,6 +7,8 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.view.View;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -171,4 +173,72 @@ public class HomeActivity extends AppCompatActivity {
           })
           .addOnFailureListener(e -> Toast.makeText(this, "Error finding trip", Toast.LENGTH_SHORT).show());
     }
+
+    // 3-DOTS MENU & DELETE TRIP LOGIC
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_home, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_delete_trip) {
+            showDeleteTripSelectionDialog();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showDeleteTripSelectionDialog() {
+        String currentUserId = mAuth.getCurrentUser().getUid();
+        List<Trip> adminTrips = new ArrayList<>();
+        List<String> tripNames = new ArrayList<>();
+
+        // 1. Filter the list: Only keep trips where this user is the Admin
+        for (Trip trip : tripList) {
+            // NOTE: If your getter in Trip.java is named differently (like getCreatedBy()), 
+            // change 'getAdminId()' below to match your exact code!
+            if (trip.getAdminId() != null && trip.getAdminId().equals(currentUserId)) {
+                adminTrips.add(trip);
+                tripNames.add(trip.getName());
+            }
+        }
+
+        // 2. If they aren't admin of anything, show a toast and stop.
+        if (adminTrips.isEmpty()) {
+            Toast.makeText(this, "You are not the Admin of any trips.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 3. Show a premium list dialog of their trips
+        String[] namesArray = tripNames.toArray(new String[0]);
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Select Trip to Delete")
+            .setItems(namesArray, (dialog, which) -> {
+                Trip selectedTrip = adminTrips.get(which);
+                confirmDeleteTrip(selectedTrip);
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void confirmDeleteTrip(Trip trip) {
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Delete " + trip.getName() + "?")
+            .setMessage("This will permanently remove the trip for all members. This cannot be undone.")
+            .setPositiveButton("Delete", (dialog, which) -> {
+                // Delete the parent trip document from Firebase
+                db.collection("trips").document(trip.getId())
+                  .delete()
+                  .addOnSuccessListener(aVoid -> {
+                      Toast.makeText(this, "Trip deleted permanently", Toast.LENGTH_SHORT).show();
+                      // Your real-time listener will automatically remove the card from the screen!
+                  });
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
 }
