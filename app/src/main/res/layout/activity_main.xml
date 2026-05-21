@@ -279,6 +279,16 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Final Balances"
+                    android:textColor="@color/text_dark"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="16dp"
+                    android:layout_marginStart="4dp"/>
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnCalculate"
                     android:layout_width="match_parent"
@@ -288,6 +298,7 @@
                     android:textStyle="bold"
                     app:backgroundTint="@color/purple_primary"
                     app:cornerRadius="16dp"
+                    app:elevation="2dp"
                     android:layout_marginBottom="24dp"/>
 
                 <com.google.android.material.card.MaterialCardView
@@ -298,17 +309,41 @@
                     app:cardElevation="2dp"
                     app:strokeWidth="0dp">
 
-                    <TextView
-                        android:id="@+id/tvResults"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="20dp"
-                        android:text="Press calculate to see who owes whom."
-                        android:textColor="@color/text_dark"
-                        android:textSize="16sp"
-                        android:lineSpacingExtra="4dp"/>
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="How to Settle Up"
+                            android:textColor="@color/purple_dark"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="12dp"/>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/divider_color"
+                            android:layout_marginBottom="16dp"/>
+
+                        <TextView
+                            android:id="@+id/tvResults"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Press calculate to see who owes whom."
+                            android:textColor="@color/text_dark"
+                            android:textSize="16sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:lineSpacingExtra="10dp"/> 
+
+                    </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
+
         </FrameLayout>
     </ScrollView>
 </LinearLayout>
