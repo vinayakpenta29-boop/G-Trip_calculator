@@ -194,7 +194,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="50dp"
                             android:background="@drawable/bg_input"
-                            android:hint="What was it for?"
+                            android:hint="Add Expense Name"
                             android:paddingHorizontal="16dp"
                             android:layout_marginBottom="12dp" />
 
@@ -337,11 +337,88 @@
                             android:text="Press calculate to see who owes whom."
                             android:textColor="@color/text_dark"
                             android:textSize="16sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="sans-serif-monospace"
                             android:lineSpacingExtra="10dp"/> 
 
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Individual Summary"
+                            android:textColor="@color/purple_dark"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="12dp"/>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/divider_color"
+                            android:layout_marginBottom="16dp"/>
+
+                        <TableLayout
+                            android:id="@+id/tableSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stretchColumns="*"> <TableRow android:paddingBottom="12dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Name"
+                                    android:textColor="@color/text_gray"
+                                    android:textStyle="bold"
+                                    android:textSize="12sp"/>
+                                
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Paid"
+                                    android:gravity="center"
+                                    android:textColor="@color/text_gray"
+                                    android:textStyle="bold"
+                                    android:textSize="12sp"/>
+                                
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Share"
+                                    android:gravity="center"
+                                    android:textColor="@color/text_gray"
+                                    android:textStyle="bold"
+                                    android:textSize="12sp"/>
+                                
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Balance"
+                                    android:gravity="end"
+                                    android:textColor="@color/text_gray"
+                                    android:textStyle="bold"
+                                    android:textSize="12sp"/>
+                            </TableRow>
+
+                            </TableLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+                
+                
             </LinearLayout>
 
         </FrameLayout>
