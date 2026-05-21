@@ -38,12 +38,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/headerLayout"
-        android:divider="@null"
-        android:dividerHeight="0dp"
         android:paddingHorizontal="16dp" 
         android:clipToPadding="false"
         android:paddingBottom="100dp"
-        android:scrollbars="none"/>
+        android:scrollbars="none"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="16dp"/>
 
     <LinearLayout
         android:id="@+id/bottomButtons"
