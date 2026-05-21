@@ -593,8 +593,8 @@ public class MainActivity extends AppCompatActivity {
             // Column 1: Member Name
             TextView tvName = new TextView(this);
             tvName.setText(m.getName());
-            tvName.setTextColor(ContextCompat.getColor(this, R.color.member_magenta));
-            tvName.setTypeface(null, Typeface.BOLD);
+            tvName.setTextColor(ContextCompat.getColor(this, R.color.purple_primary));
+            tvName.setTypeface(Typeface.create("monospace", Typeface.NORMAL));
             tvName.setTextSize(14f);
 
             // Column 2: Total Paid
@@ -602,6 +602,7 @@ public class MainActivity extends AppCompatActivity {
             tvPaid.setText(String.format("₹%.2f", paid));
             tvPaid.setTextColor(ContextCompat.getColor(this, R.color.text_dark));
             tvPaid.setGravity(Gravity.CENTER);
+            tvPaid.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
             tvPaid.setTextSize(14f);
 
             // Column 3: Total Share
@@ -609,12 +610,13 @@ public class MainActivity extends AppCompatActivity {
             tvShare.setText(String.format("₹%.2f", share));
             tvShare.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
             tvShare.setGravity(Gravity.CENTER);
+            tvShare.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
             tvShare.setTextSize(14f);
 
             // Column 4: Balance (Color Coded!)
             TextView tvBalance = new TextView(this);
             tvBalance.setGravity(Gravity.END);
-            tvBalance.setTypeface(null, Typeface.BOLD);
+            tvBalance.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
             tvBalance.setTextSize(14f);
 
             if (balance > 0.01) {
