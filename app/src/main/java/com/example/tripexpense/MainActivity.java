@@ -250,7 +250,13 @@ public class MainActivity extends AppCompatActivity {
         String amountStr = etAmount.getText().toString().trim();
         Member selectedPayer = (Member) spinnerPayer.getSelectedItem();
 
-        if (title.isEmpty() || amountStr.isEmpty() || selectedPayer == null) {
+        // 🛑 NEW CHECK: Prevent saving if "Select Payer" is still selected
+        if (selectedPayer == null || selectedPayer.getId().equals("-1")) {
+            Toast.makeText(this, "Please select who paid!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (title.isEmpty() || amountStr.isEmpty()) {
             Toast.makeText(this, "Fill all details", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -259,7 +265,6 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < llInvolvedMembers.getChildCount(); i++) {
             CheckBox cb = (CheckBox) llInvolvedMembers.getChildAt(i);
             if (cb.isChecked()) {
-                // Find the member object by ID
                 String mId = (String) cb.getTag();
                 for (Member m : memberList) {
                     if (m.getId().equals(mId)) involved.add(m);
@@ -274,7 +279,6 @@ public class MainActivity extends AppCompatActivity {
 
         double amount = Double.parseDouble(amountStr);
 
-        // If editingExpenseId is "-1", generate a new ID. Otherwise, use the existing one to overwrite it.
         String expenseId = editingExpenseId.equals("-1") ? 
             db.collection("trips").document(currentTripId).collection("expenses").document().getId() : editingExpenseId;
 
@@ -283,13 +287,16 @@ public class MainActivity extends AppCompatActivity {
         db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
           .set(newExpense)
           .addOnSuccessListener(aVoid -> {
+              // 🛑 RESET THE UI AFTER SAVING
               etTitle.setText("");
               etAmount.setText("");
+              spinnerPayer.setSelection(0); // Resets Spinner back to "Select Payer"
               editingExpenseId = "-1";
               btnAddExpense.setText("Save Expense");
               Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
           });
     }
+
 
     // --- UI HELPERS ---
 
@@ -312,9 +319,17 @@ public class MainActivity extends AppCompatActivity {
             tvMemberList.setText(names.substring(0, names.length() - 2));
         }
 
-        ArrayAdapter<Member> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, memberList);
+        // 🛑 THE FIX: Create a separate list just for the Spinner
+        List<Member> spinnerList = new ArrayList<>();
+        // Add our dummy "Select Payer" item at the very top (Index 0)
+        spinnerList.add(new Member("-1", "-- Select Payer --")); 
+        // Then add all the real members below it
+        spinnerList.addAll(memberList);
+
+        ArrayAdapter<Member> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, spinnerList);
         spinnerPayer.setAdapter(adapter);
     }
+
 
     private void showExpenseDetailsDialog(Expense expense) {
         // 1. Inflate our custom premium layout
