@@ -2,11 +2,13 @@ package com.example.tripexpense;
 
 import android.app.AlertDialog;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Gravity;
 import android.widget.ListAdapter;
 
 import android.widget.ArrayAdapter;
@@ -19,6 +21,9 @@ import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -457,11 +462,11 @@ public class MainActivity extends AppCompatActivity {
             Balance creditor = creditors.get(j);
 
             double settlement = Math.min(debtor.amount, creditor.amount);
-            results.append("➔ ").append(debtor.name).append(" pays ").append(creditor.name)
-                   .append(String.format(" ₹%.2f\n", settlement));
+            results.append(debtor.name).append(" Pays ").append(" ➔ ").append(creditor.name)
+                   .append(String.format(" ₹%.2f\n", settlement)); 
 
             debtor.amount -= settlement;
-            creditor.amount -= settlement;
+            creditor.amount -= settlement; 
 
             if (debtor.amount < 0.01) i++;
             if (creditor.amount < 0.01) j++;
@@ -536,6 +541,111 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void updateSummaryTable() {
+        TableLayout tableSummary = findViewById(R.id.tableSummary);
+        
+        // 1. Clear old data rows (but keep the Header at index 0)
+        int count = tableSummary.getChildCount();
+        for (int i = count - 1; i > 0; i--) {
+            tableSummary.removeViewAt(i);
+        }
+
+        // 2. Set up variables for the math
+        Map<String, Double> totalPaid = new HashMap<>();
+        Map<String, Double> totalShare = new HashMap<>();
+
+        for (Member m : memberList) {
+            totalPaid.put(m.getId(), 0.0);
+            totalShare.put(m.getId(), 0.0);
+        }
+
+        // 3. Calculate Paid & Share for every expense
+        for (Expense e : expenseList) {
+            // Add to the Payer's total
+            if (totalPaid.containsKey(e.getPayerId())) {
+                totalPaid.put(e.getPayerId(), totalPaid.get(e.getPayerId()) + e.getAmount());
+            }
+
+            // Split the share among involved members
+            if (e.getInvolvedMembers() != null && !e.getInvolvedMembers().isEmpty()) {
+                double splitAmount = e.getAmount() / e.getInvolvedMembers().size();
+                for (Member m : e.getInvolvedMembers()) {
+                    if (totalShare.containsKey(m.getId())) {
+                        totalShare.put(m.getId(), totalShare.get(m.getId()) + splitAmount);
+                    }
+                }
+            }
+        }
+
+        // 4. Build the UI Rows dynamically
+        for (Member m : memberList) {
+            double paid = totalPaid.get(m.getId());
+            double share = totalShare.get(m.getId());
+            double balance = paid - share;
+
+            TableRow row = new TableRow(this);
+            row.setPadding(0, 16, 0, 16); // Premium vertical spacing
+
+            // Column 1: Member Name
+            TextView tvName = new TextView(this);
+            tvName.setText(m.getName());
+            tvName.setTextColor(ContextCompat.getColor(this, R.color.member_magenta));
+            tvName.setTypeface(null, Typeface.BOLD);
+            tvName.setTextSize(14f);
+
+            // Column 2: Total Paid
+            TextView tvPaid = new TextView(this);
+            tvPaid.setText(String.format("₹%.2f", paid));
+            tvPaid.setTextColor(ContextCompat.getColor(this, R.color.text_dark));
+            tvPaid.setGravity(Gravity.CENTER);
+            tvPaid.setTextSize(14f);
+
+            // Column 3: Total Share
+            TextView tvShare = new TextView(this);
+            tvShare.setText(String.format("₹%.2f", share));
+            tvShare.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+            tvShare.setGravity(Gravity.CENTER);
+            tvShare.setTextSize(14f);
+
+            // Column 4: Balance (Color Coded!)
+            TextView tvBalance = new TextView(this);
+            tvBalance.setGravity(Gravity.END);
+            tvBalance.setTypeface(null, Typeface.BOLD);
+            tvBalance.setTextSize(14f);
+
+            if (balance > 0.01) {
+                // They paid more than their share: They get money BACK (Green)
+                tvBalance.setTextColor(Color.parseColor("#388E3C")); 
+                tvBalance.setText("+" + String.format("₹%.2f", balance));
+            } else if (balance < -0.01) {
+                // They used more than they paid: They OWE money (Red)
+                tvBalance.setTextColor(Color.parseColor("#D32F2F")); 
+                tvBalance.setText(String.format("₹%.2f", balance)); 
+            } else {
+                // Perfect zero balance
+                tvBalance.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+                tvBalance.setText("₹0.00");
+            }
+
+            // Add all columns to the row
+            row.addView(tvName);
+            row.addView(tvPaid);
+            row.addView(tvShare);
+            row.addView(tvBalance);
+
+            // Add row to table
+            tableSummary.addView(row);
+
+            // Add a thin grey divider line under the row
+            View divider = new View(this);
+            TableRow.LayoutParams params = new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 1);
+            params.span = 4;
+            divider.setLayoutParams(params);
+            divider.setBackgroundColor(ContextCompat.getColor(this, R.color.divider_color));
+            tableSummary.addView(divider);
+        }
     }
 
 }
