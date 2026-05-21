@@ -129,6 +129,8 @@ public class MainActivity extends AppCompatActivity {
         // 8. Start Real-time Listeners
         listenForMembers();
         listenForExpenses();
+
+        switchTab(2);
     }
 
     private void enforcePermissions() {
