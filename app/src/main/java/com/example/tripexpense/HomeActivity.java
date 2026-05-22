@@ -83,21 +83,29 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void showCreateTripDialog() {
-        EditText input = new EditText(this);
-        input.setHint("e.g., Goa Trip");
+        // 1. Inflate the beautiful new XML layout
+        View view = getLayoutInflater().inflate(R.layout.dialog_create_trip, null);
+        
+        // Find the input box inside that layout
+        com.google.android.material.textfield.TextInputEditText etTripName = view.findViewById(R.id.etTripName);
 
-        new AlertDialog.Builder(this)
-            .setTitle("New Trip")
-            .setView(input)
+        // 2. Build the Premium Material Dialog
+        new MaterialAlertDialogBuilder(this)
+            .setView(view)
+            // We use background as white rounded rectangle (Material Builder usually handles this, 
+            // but we can set it to ensure a clean card look)
             .setPositiveButton("Create", (dialog, which) -> {
-                String tripName = input.getText().toString().trim();
+                String tripName = etTripName.getText().toString().trim();
                 if (!tripName.isEmpty()) {
                     createTripInCloud(tripName);
+                } else {
+                    Toast.makeText(this, "Please enter a trip name", Toast.LENGTH_SHORT).show();
                 }
             })
             .setNegativeButton("Cancel", null)
             .show();
     }
+
 
     private void createTripInCloud(String name) {
         // Generate a random 8-character hex code for sharing (e.g. "f445a7f8")
