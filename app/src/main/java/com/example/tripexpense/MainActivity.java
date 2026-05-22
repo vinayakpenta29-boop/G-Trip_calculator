@@ -113,6 +113,8 @@ public class MainActivity extends AppCompatActivity {
         lvExpenses = findViewById(R.id.lvExpenses);
         btnAddExpense = findViewById(R.id.btnAddExpense);
         btnAddMember = findViewById(R.id.btnAddMember);
+        btnOpenNotes = findViewById(R.id.btnOpenNotes).setOnClickListener(v -> showNotesDialog());
+        
 
         // 5. Apply Admin vs Viewer UI restrictions
         enforcePermissions();
@@ -656,6 +658,58 @@ public class MainActivity extends AppCompatActivity {
             divider.setBackgroundColor(ContextCompat.getColor(this, R.color.divider_color));
             tableSummary.addView(divider);
         }
+    }
+
+    private void showNotesDialog() {
+        View view = getLayoutInflater().inflate(R.layout.dialog_notes, null);
+        ListView lvNotes = view.findViewById(R.id.lvNotes);
+        
+        com.google.android.material.textfield.TextInputEditText etNewNote = view.findViewById(R.id.etNewNote);
+        com.google.android.material.button.MaterialButton btnSaveNote = view.findViewById(R.id.btnSaveNote);
+
+        List<Note> noteList = new ArrayList<>();
+        NoteAdapter noteAdapter = new NoteAdapter(this, noteList);
+        lvNotes.setAdapter(noteAdapter);
+
+        // 1. Build and show the pop-up
+        androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setView(view)
+                .show();
+
+        // 2. Fetch Notes from Firebase instantly (Oldest at top, Newest at bottom like a chat)
+        db.collection("trips").document(currentTripId).collection("notes")
+          .orderBy("timestamp") 
+          .addSnapshotListener((value, error) -> {
+              if (value != null) {
+                  noteList.clear();
+                  for (com.google.firebase.firestore.QueryDocumentSnapshot doc : value) {
+                      noteList.add(doc.toObject(Note.class));
+                  }
+                  noteAdapter.notifyDataSetChanged();
+                  
+                  // Auto-scroll to the newest note!
+                  if(noteAdapter.getCount() > 0) {
+                      lvNotes.setSelection(noteAdapter.getCount() - 1);
+                  }
+              }
+          });
+
+        // 3. Save a new Note
+        btnSaveNote.setOnClickListener(v -> {
+            String text = etNewNote.getText().toString().trim();
+            if (!text.isEmpty()) {
+                String noteId = db.collection("trips").document(currentTripId).collection("notes").document().getId();
+                
+                // Note: We use "Member" here. If you track names in SharedPreferences, replace "Member" with their real name!
+                Note newNote = new Note(noteId, text, "Member", System.currentTimeMillis());
+
+                db.collection("trips").document(currentTripId).collection("notes").document(noteId)
+                  .set(newNote)
+                  .addOnSuccessListener(aVoid -> {
+                      etNewNote.setText(""); // Clear the input box after sending
+                  });
+            }
+        });
     }
 
 }
