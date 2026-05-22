@@ -48,6 +48,19 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOpenNotes"
+        style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Notes"
+        android:textColor="@color/purple_primary"
+        app:iconTint="@color/purple_primary"
+        android:layout_gravity="end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"/>
+
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
@@ -377,7 +390,9 @@
                             android:id="@+id/tableSummary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:stretchColumns="*"> <TableRow android:paddingBottom="12dp">
+                            android:stretchColumns="*"> 
+                            
+                            <TableRow android:paddingBottom="12dp">
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
@@ -414,10 +429,9 @@
                                     android:textSize="12sp"/>
                             </TableRow>
 
-                            </TableLayout>
+                        </TableLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-                
                 
             </LinearLayout>
 
