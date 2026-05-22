@@ -113,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         lvExpenses = findViewById(R.id.lvExpenses);
         btnAddExpense = findViewById(R.id.btnAddExpense);
         btnAddMember = findViewById(R.id.btnAddMember);
-        btnOpenNotes = findViewById(R.id.btnOpenNotes).setOnClickListener(v -> showNotesDialog());
+        
         
 
         // 5. Apply Admin vs Viewer UI restrictions
@@ -127,6 +127,9 @@ public class MainActivity extends AppCompatActivity {
         // 7. Button Listeners (Only functional if Admin)
         btnAddMember.setOnClickListener(v -> saveMemberToCloud());
         btnAddExpense.setOnClickListener(v -> saveExpenseToCloud());
+        
+        findViewById(R.id.btnOpenNotes).setOnClickListener(v -> showNotesDialog());
+        
         findViewById(R.id.btnCalculate).setOnClickListener(v -> calculateSplits());
 
         lvExpenses.setOnItemClickListener((parent, view, position, id) -> {
