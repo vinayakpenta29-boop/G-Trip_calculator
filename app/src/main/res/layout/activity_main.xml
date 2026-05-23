@@ -435,6 +435,19 @@
                 
             </LinearLayout>
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSeeIndividualExpenses"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="16dp"
+                    android:text="See Individual Expenses"
+                    android:textColor="@color/purple_primary"
+                    app:strokeColor="@color/purple_primary"
+                    app:strokeWidth="2dp"
+                    app:cornerRadius="16dp" />
+
+
         </FrameLayout>
     </ScrollView>
 </LinearLayout>
