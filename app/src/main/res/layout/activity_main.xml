@@ -432,8 +432,6 @@
                         </TableLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-                
-            </LinearLayout>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSeeIndividualExpenses"
@@ -446,7 +444,8 @@
                     app:strokeColor="@color/purple_primary"
                     app:strokeWidth="2dp"
                     app:cornerRadius="16dp" />
-
+                
+            </LinearLayout>
 
         </FrameLayout>
     </ScrollView>
