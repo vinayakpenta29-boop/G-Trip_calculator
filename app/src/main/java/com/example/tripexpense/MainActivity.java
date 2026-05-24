@@ -132,6 +132,9 @@ public class MainActivity extends AppCompatActivity {
         
         findViewById(R.id.btnCalculate).setOnClickListener(v -> calculateSplits());
 
+        findViewById(R.id.btnSeeIndividualExpenses).setOnClickListener(v -> showSelectMemberDialog());
+        
+
         lvExpenses.setOnItemClickListener((parent, view, position, id) -> {
             Expense clickedExpense = expenseList.get(position);
             showExpenseDetailsDialog(clickedExpense);
@@ -713,6 +716,112 @@ public class MainActivity extends AppCompatActivity {
                   });
             }
         });
+    }
+
+    // INDIVIDUAL EXPENSE BREAKDOWN LOGIC
+
+    private void showSelectMemberDialog() {
+        if (memberList.isEmpty()) {
+            Toast.makeText(this, "No members available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Convert Member List to an Array of Names for the pop-up
+        String[] namesArray = new String[memberList.size()];
+        for (int i = 0; i < memberList.size(); i++) {
+            namesArray[i] = memberList.get(i).getName();
+        }
+
+        // Show a premium Material list of names
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Whose expenses do you want to see?")
+            .setItems(namesArray, (dialog, which) -> {
+                Member selectedMember = memberList.get(which);
+                showMemberExpensesDialog(selectedMember);
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void showMemberExpensesDialog(Member member) {
+        View view = getLayoutInflater().inflate(R.layout.dialog_member_expenses, null);
+        
+        TextView tvName = view.findViewById(R.id.tvDialogMemberName);
+        LinearLayout llContainer = view.findViewById(R.id.llExpenseListContainer);
+        TextView tvTotal = view.findViewById(R.id.tvDialogTotalShare);
+
+        // Force uppercase for an extra premium monospace look
+        tvName.setText(member.getName().toUpperCase() + "'S SHARE");
+
+        double totalShare = 0.0;
+
+        // Loop through ALL expenses to find which ones this member was a part of
+        for (Expense e : expenseList) {
+            boolean isMemberInvolved = false;
+            
+            if (e.getInvolvedMembers() != null) {
+                for (Member m : e.getInvolvedMembers()) {
+                    if (m.getId().equals(member.getId())) {
+                        isMemberInvolved = true;
+                        break;
+                    }
+                }
+            }
+
+            // If they are part of this expense, create a beautiful row for it!
+            if (isMemberInvolved) {
+                double myShare = e.getAmount() / e.getInvolvedMembers().size();
+                totalShare += myShare;
+
+                // 1. Create the Row Layout
+                LinearLayout row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.setPadding(0, 20, 0, 20);
+
+                // 2. The Expense Name (Left side)
+                TextView tvExpenseTitle = new TextView(this);
+                tvExpenseTitle.setText(e.getTitle());
+                tvExpenseTitle.setTextColor(ContextCompat.getColor(this, R.color.text_dark));
+                tvExpenseTitle.setTextSize(16f);
+                LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                tvExpenseTitle.setLayoutParams(titleParams);
+
+                // 3. The Amount (Right side in Monospace)
+                TextView tvExpenseShare = new TextView(this);
+                tvExpenseShare.setText(String.format("₹%.2f", myShare));
+                tvExpenseShare.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+                tvExpenseShare.setTextSize(16f);
+                tvExpenseShare.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
+
+                // Add texts to the row, and the row to the container
+                row.addView(tvExpenseTitle);
+                row.addView(tvExpenseShare);
+                llContainer.addView(row);
+
+                // 4. Add a clean grey divider under the row
+                View divider = new View(this);
+                divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1));
+                divider.setBackgroundColor(ContextCompat.getColor(this, R.color.divider_color));
+                llContainer.addView(divider);
+            }
+        }
+
+        // If they haven't been added to any expenses yet
+        if (llContainer.getChildCount() == 0) {
+            TextView tvEmpty = new TextView(this);
+            tvEmpty.setText("No expenses recorded for this member.");
+            tvEmpty.setPadding(0, 16, 0, 16);
+            llContainer.addView(tvEmpty);
+        }
+
+        // Set the final bottom total
+        tvTotal.setText(String.format("₹%.2f", totalShare));
+
+        // Show the beautiful receipt dialog
+        new MaterialAlertDialogBuilder(this)
+            .setView(view)
+            .setPositiveButton("Close", null)
+            .show();
     }
 
 }
