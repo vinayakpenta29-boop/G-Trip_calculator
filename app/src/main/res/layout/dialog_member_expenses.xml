@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@android:color/transparent">
+
+    <TextView
+        android:id="@+id/tvDialogMemberName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="MEMBER NAME"
+        android:textColor="@color/purple_dark"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Itemized Expense Breakdown"
+        android:textColor="@color/text_gray"
+        android:textSize="14sp"
+        android:layout_marginBottom="20dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="none">
+        
+        <LinearLayout
+            android:id="@+id/llExpenseListContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="@color/purple_primary"
+        android:layout_marginVertical="16dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Total Share"
+            android:textColor="@color/text_dark"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+            
+        <TextView
+            android:id="@+id/tvDialogTotalShare"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="₹0.00"
+            android:textColor="@color/purple_dark"
+            android:textSize="18sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"/>
+    </LinearLayout>
+</LinearLayout>
