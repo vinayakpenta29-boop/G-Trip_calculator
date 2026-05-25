@@ -677,6 +677,14 @@ public class MainActivity extends AppCompatActivity {
         NoteAdapter noteAdapter = new NoteAdapter(this, noteList);
         lvNotes.setAdapter(noteAdapter);
 
+                // 🛑 ADD THIS: Listen for a Long-Press on any note
+        lvNotes.setOnItemLongClickListener((parent, view1, position, id) -> {
+            Note selectedNote = noteList.get(position);
+            showNoteOptionsDialog(selectedNote);
+            return true; // Tells Android we handled the long-click
+        });
+        
+
         // 1. Build and show the pop-up
         androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setView(view)
@@ -821,6 +829,68 @@ public class MainActivity extends AppCompatActivity {
         new MaterialAlertDialogBuilder(this)
             .setView(view)
             .setPositiveButton("Close", null)
+            .show();
+    }
+
+    // ==========================================
+    // NOTE EDIT & DELETE LOGIC
+    // ==========================================
+
+    private void showNoteOptionsDialog(Note note) {
+        String[] options = {"Edit Note", "Delete Note"};
+
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Note Options")
+            .setItems(options, (dialog, which) -> {
+                if (which == 0) {
+                    showEditNoteDialog(note);
+                } else if (which == 1) {
+                    deleteNoteFromCloud(note);
+                }
+            })
+            .show();
+    }
+
+    private void showEditNoteDialog(Note note) {
+        // Build a premium text box programmatically (no new XML file needed!)
+        com.google.android.material.textfield.TextInputLayout layout = new com.google.android.material.textfield.TextInputLayout(this);
+        int padding = (int) (20 * getResources().getDisplayMetrics().density); // 20dp padding
+        layout.setPadding(padding, padding / 2, padding, 0);
+        
+        com.google.android.material.textfield.TextInputEditText input = new com.google.android.material.textfield.TextInputEditText(this);
+        input.setText(note.getText());
+        input.setSelection(input.getText().length()); // Put cursor at the end
+        layout.addView(input);
+
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Edit Note")
+            .setView(layout)
+            .setPositiveButton("Save", (dialog, which) -> {
+                String newText = input.getText().toString().trim();
+                if (!newText.isEmpty() && !newText.equals(note.getText())) {
+                    // Update the note in Firebase
+                    db.collection("trips").document(currentTripId)
+                      .collection("notes").document(note.getId())
+                      .update("text", newText)
+                      .addOnSuccessListener(aVoid -> Toast.makeText(this, "Note updated!", Toast.LENGTH_SHORT).show());
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void deleteNoteFromCloud(Note note) {
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Delete Note?")
+            .setMessage("Are you sure you want to delete this note? This cannot be undone.")
+            .setPositiveButton("Delete", (dialog, which) -> {
+                // Remove the note from Firebase
+                db.collection("trips").document(currentTripId)
+                  .collection("notes").document(note.getId())
+                  .delete()
+                  .addOnSuccessListener(aVoid -> Toast.makeText(this, "Note deleted", Toast.LENGTH_SHORT).show());
+            })
+            .setNegativeButton("Cancel", null)
             .show();
     }
 
