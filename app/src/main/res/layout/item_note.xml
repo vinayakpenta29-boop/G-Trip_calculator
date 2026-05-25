@@ -29,7 +29,7 @@
                 android:textColor="@color/purple_dark"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="sans-serif-monospace"
                 android:layout_marginBottom="6dp"/>
 
             <TextView
