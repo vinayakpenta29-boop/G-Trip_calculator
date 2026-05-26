@@ -113,9 +113,13 @@ public class MainActivity extends AppCompatActivity {
         lvExpenses = findViewById(R.id.lvExpenses);
         btnAddExpense = findViewById(R.id.btnAddExpense);
         btnAddMember = findViewById(R.id.btnAddMember);
-        
-        
 
+        Spinner spinnerCategory = findViewById(R.id.spinnerCategory);
+        String[] categories = {"🍔 Food & Drinks", "🚕 Transport", "🏨 Accommodation", "🎢 Activities", "🛒 Groceries", "💡 Other"};
+        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, categories);
+        spinnerCategory.setAdapter(categoryAdapter);
+        
+        
         // 5. Apply Admin vs Viewer UI restrictions
         enforcePermissions();
 
@@ -303,8 +307,12 @@ public class MainActivity extends AppCompatActivity {
         String expenseId = editingExpenseId.equals("-1") ? 
             db.collection("trips").document(currentTripId).collection("expenses").document().getId() : editingExpenseId;
 
-        Expense newExpense = new Expense(expenseId, title, amount, selectedPayer.getId(), selectedPayer.getName(), involved);
+        selected category from the UI
+        Spinner spinnerCategory = findViewById(R.id.spinnerCategory);
+        String selectedCategory = spinnerCategory.getSelectedItem().toString();
 
+        Expense newExpense = new Expense(expenseId, title, amount, selectedPayer.getId(), selectedPayer.getName(), involved, selectedCategory);
+        
         newExpense.setTimestamp(System.currentTimeMillis());
 
         db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
