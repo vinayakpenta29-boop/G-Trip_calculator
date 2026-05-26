@@ -1,39 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:orientation="horizontal"
     android:paddingVertical="12dp"
-    android:paddingHorizontal="4dp">
+    android:gravity="center_vertical">
 
     <TextView
-        android:id="@+id/tvItemTitle"
-        android:layout_width="wrap_content"
+        android:id="@+id/tvCategoryIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:text="💸"
+        android:textSize="24sp"
+        android:layout_marginEnd="12dp"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Expense Title"
-        android:textColor="@color/text_dark"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_alignParentStart="true"/>
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvExpenseTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_dark"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tvExpensePayer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_gray"
+            android:textSize="12sp"/>
+    </LinearLayout>
 
     <TextView
-        android:id="@+id/tvItemPayer"
+        android:id="@+id/tvExpenseAmount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Paid by: Name"
-        android:textColor="@color/text_gray"
-        android:textSize="14sp"
-        android:layout_below="@id/tvItemTitle"
-        android:layout_marginTop="2dp"
-        android:layout_alignParentStart="true"/>
-
-    <TextView
-        android:id="@+id/tvItemAmount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="₹0.00"
-        android:textColor="@color/purple_primary"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"/>
-</RelativeLayout>
+        android:textColor="@color/purple_dark"
+        android:textSize="16sp"
+        android:textStyle="bold"/>
+</LinearLayout>
