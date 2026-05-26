@@ -70,4 +70,12 @@
         android:textSize="16sp"
         android:lineSpacingExtra="6dp"/>
 
+    <ImageView
+        android:id="@+id/ivDialogReceipt"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:scaleType="centerCrop"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"/>
+
 </LinearLayout>
