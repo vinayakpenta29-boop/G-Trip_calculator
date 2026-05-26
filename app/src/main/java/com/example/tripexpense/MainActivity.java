@@ -136,6 +136,8 @@ public class MainActivity extends AppCompatActivity {
         
         findViewById(R.id.btnCalculate).setOnClickListener(v -> calculateSplits());
 
+        findViewById(R.id.btnSettleUp).setOnClickListener(v -> showSettleUpDialog());
+        
         findViewById(R.id.btnSeeIndividualExpenses).setOnClickListener(v -> showSelectMemberDialog());
 
         findViewById(R.id.btnShareReport).setOnClickListener(v -> shareReportToWhatsApp());
@@ -948,6 +950,66 @@ public class MainActivity extends AppCompatActivity {
             sharingIntent.setPackage(null);
             startActivity(android.content.Intent.createChooser(sharingIntent, "Share Report via..."));
         }
+    }
+
+    // MARK AS PAID (SETTLE UP) LOGIC
+    
+    private void showSettleUpDialog() {
+        if (memberList.size() < 2) {
+            Toast.makeText(this, "Need at least 2 members to settle up!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        View view = getLayoutInflater().inflate(R.layout.dialog_settle_up, null);
+        Spinner spinnerSender = view.findViewById(R.id.spinnerSender);
+        Spinner spinnerReceiver = view.findViewById(R.id.spinnerReceiver);
+        EditText etPaymentAmount = view.findViewById(R.id.etPaymentAmount);
+
+        // Populate both spinners with the member list
+        ArrayAdapter<Member> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, memberList);
+        spinnerSender.setAdapter(adapter);
+        spinnerReceiver.setAdapter(adapter);
+
+        new MaterialAlertDialogBuilder(this)
+            .setView(view)
+            .setPositiveButton("Save Payment", (dialog, which) -> {
+                Member sender = (Member) spinnerSender.getSelectedItem();
+                Member receiver = (Member) spinnerReceiver.getSelectedItem();
+                String amountStr = etPaymentAmount.getText().toString().trim();
+
+                // 1. Validate the input
+                if (amountStr.isEmpty()) {
+                    Toast.makeText(this, "Please enter an amount", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (sender.getId().equals(receiver.getId())) {
+                    Toast.makeText(this, "Sender and receiver cannot be the same person!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                double amount = Double.parseDouble(amountStr);
+                String expenseId = db.collection("trips").document(currentTripId).collection("expenses").document().getId();
+
+                // 2. The Accounting Trick:
+                // Sender is the Payer. Receiver is the ONLY involved member.
+                List<Member> involved = new ArrayList<>();
+                involved.add(receiver);
+
+                String title = sender.getName() + " paid " + receiver.getName();
+                String category = "✅ Payment"; // Using a checkmark emoji for the category!
+
+                Expense paymentExpense = new Expense(expenseId, title, amount, sender.getId(), sender.getName(), involved, category);
+                paymentExpense.setTimestamp(System.currentTimeMillis());
+
+                // 3. Save to Firebase
+                db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
+                  .set(paymentExpense)
+                  .addOnSuccessListener(aVoid -> {
+                      Toast.makeText(this, "Payment Recorded!", Toast.LENGTH_SHORT).show();
+                  });
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
 }
