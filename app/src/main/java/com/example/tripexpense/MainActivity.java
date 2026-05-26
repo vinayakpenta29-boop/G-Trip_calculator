@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
         btnAddMember = findViewById(R.id.btnAddMember);
 
         Spinner spinnerCategory = findViewById(R.id.spinnerCategory);
-        String[] categories = {"🍔 Food & Drinks", "🚕 Transport", "🏨 Accommodation", "🎢 Activities", "🛒 Groceries", "💡 Other"};
+        String[] categories = {"-- Select Category --", "🍔 Food & Drinks", "🚕 Transport", "🏨 Accommodation", "🎢 Activities", "🛒 Groceries", "💡 Other"};
         ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, categories);
         spinnerCategory.setAdapter(categoryAdapter);
         
@@ -310,6 +310,11 @@ public class MainActivity extends AppCompatActivity {
         Spinner spinnerCategory = findViewById(R.id.spinnerCategory);
         String selectedCategory = spinnerCategory.getSelectedItem().toString();
 
+        if (selectedCategory.equals("-- Select Category --")) {
+            Toast.makeText(this, "Please select a category!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Expense newExpense = new Expense(expenseId, title, amount, selectedPayer.getId(), selectedPayer.getName(), involved, selectedCategory);
         
         newExpense.setTimestamp(System.currentTimeMillis());
@@ -321,6 +326,7 @@ public class MainActivity extends AppCompatActivity {
               etTitle.setText("");
               etAmount.setText("");
               spinnerPayer.setSelection(0); // Resets Spinner back to "Select Payer"
+              spinnerCategory.setSelection(0); // 🛑 ADD THIS: Resets Category back to default
               editingExpenseId = "-1";
               btnAddExpense.setText("Save Expense");
               Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
