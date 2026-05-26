@@ -9,8 +9,8 @@ public class Expense {
     private String payerId;
     private String payerName;
     private List<Member> involvedMembers;
-    private String category;
     private long timestamp;
+    private String category;
 
     // 1. REQUIRED BY FIREBASE
     public Expense() {}
@@ -33,15 +33,13 @@ public class Expense {
     public String getPayerName() { return payerName; }
     public List<Member> getInvolvedMembers() { return involvedMembers; }
 
-    public String getCategory() { return category; }
-
     public long getTimestamp() { 
         return timestamp; 
     }
+    public void setTimestamp(long timestamp) { 
+        this.timestamp = timestamp;}
+
+    public String getCategory() { return category; }
 
     public void setCategory(String category) { this.category = category; }
-    
-    public void setTimestamp(long timestamp) { 
-        this.timestamp = timestamp; 
-    }
 }
