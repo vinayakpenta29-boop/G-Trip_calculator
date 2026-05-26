@@ -444,6 +444,19 @@
                     app:strokeColor="@color/purple_primary"
                     app:strokeWidth="2dp"
                     app:cornerRadius="16dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnShareReport"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="16dp"
+                    android:text="Share to WhatsApp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    app:backgroundTint="#25D366" 
+                    app:cornerRadius="16dp" />
+
                 
             </LinearLayout>
 
