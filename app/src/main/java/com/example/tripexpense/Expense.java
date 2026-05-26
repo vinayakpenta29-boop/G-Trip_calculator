@@ -10,9 +10,8 @@ public class Expense {
     private String payerName;
     private List<Member> involvedMembers;
     private long timestamp;
-    
-    // 🛑 NEW: The category variable
     private String category;
+    private String receiptUrl = "";
 
     // Empty constructor (Required by Firebase)
     public Expense() {} 
@@ -53,4 +52,7 @@ public class Expense {
     // 🛑 NEW: Getter and Setter for the category
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+
+    public String getReceiptUrl() { return receiptUrl; }
+    public void setReceiptUrl(String receiptUrl) { this.receiptUrl = receiptUrl; }
 }
