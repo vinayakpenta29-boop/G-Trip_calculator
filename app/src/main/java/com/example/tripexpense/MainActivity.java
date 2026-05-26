@@ -307,7 +307,6 @@ public class MainActivity extends AppCompatActivity {
         String expenseId = editingExpenseId.equals("-1") ? 
             db.collection("trips").document(currentTripId).collection("expenses").document().getId() : editingExpenseId;
 
-        selected category from the UI
         Spinner spinnerCategory = findViewById(R.id.spinnerCategory);
         String selectedCategory = spinnerCategory.getSelectedItem().toString();
 
