@@ -133,8 +133,10 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnCalculate).setOnClickListener(v -> calculateSplits());
 
         findViewById(R.id.btnSeeIndividualExpenses).setOnClickListener(v -> showSelectMemberDialog());
-        
 
+        findViewById(R.id.btnShareReport).setOnClickListener(v -> shareReportToWhatsApp());
+        
+        
         lvExpenses.setOnItemClickListener((parent, view, position, id) -> {
             Expense clickedExpense = expenseList.get(position);
             showExpenseDetailsDialog(clickedExpense);
@@ -892,6 +894,47 @@ public class MainActivity extends AppCompatActivity {
             })
             .setNegativeButton("Cancel", null)
             .show();
+    }
+
+    // ==========================================
+    // EXPORT TO WHATSAPP LOGIC
+    // ==========================================
+
+    private void shareReportToWhatsApp() {
+        TextView tvResults = findViewById(R.id.tvResults);
+        String resultsText = tvResults.getText().toString();
+
+        // 1. Make sure they actually calculated the splits first!
+        if (resultsText.equals("Press calculate to see who owes whom.") || resultsText.isEmpty()) {
+            Toast.makeText(this, "Please calculate the splits first!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 2. Get the Trip Name to use in the title
+        String tripName = getIntent().getStringExtra("TRIP_NAME");
+        if (tripName == null) {
+            tripName = "Our Trip";
+        }
+
+        // 3. Build a beautifully formatted WhatsApp message using asterisks for bolding
+        String shareBody = "✈️ *" + tripName + " - Final Settlement* ✈️\n\n" +
+                           "Here is the final breakdown of who owes whom:\n\n" +
+                           resultsText + "\n\n" +
+                           "📊 _Calculated instantly with Trip Expense Calculator_";
+
+        // 4. Create the Android Share Intent
+        android.content.Intent sharingIntent = new android.content.Intent(android.content.Intent.ACTION_SEND);
+        sharingIntent.setType("text/plain");
+        sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
+        
+        // 5. Try to force WhatsApp to open. If they don't have it installed, open the normal share menu!
+        sharingIntent.setPackage("com.whatsapp");
+        try {
+            startActivity(sharingIntent);
+        } catch (android.content.ActivityNotFoundException ex) {
+            sharingIntent.setPackage(null);
+            startActivity(android.content.Intent.createChooser(sharingIntent, "Share Report via..."));
+        }
     }
 
 }
