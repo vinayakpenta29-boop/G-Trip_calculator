@@ -995,7 +995,7 @@ public class MainActivity extends AppCompatActivity {
                 List<Member> involved = new ArrayList<>();
                 involved.add(receiver);
 
-                String title = sender.getName() + " paid " + receiver.getName();
+                String title = sender.getName() + " Paid to " + receiver.getName();
                 String category = "✅ Payment"; // Using a checkmark emoji for the category!
 
                 Expense paymentExpense = new Expense(expenseId, title, amount, sender.getId(), sender.getName(), involved, category);
