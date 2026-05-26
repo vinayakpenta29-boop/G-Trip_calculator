@@ -67,6 +67,19 @@ public class MainActivity extends AppCompatActivity {
     
     private String editingExpenseId = "-1"; // Strings for Firebase IDs
 
+    private android.net.Uri selectedReceiptUri = null;
+    private Button btnAttachReceipt;
+
+    // The modern Android way to pick an image from the gallery
+    private final androidx.activity.result.ActivityResultLauncher<String> pickImageLauncher = 
+        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.GetContent(), uri -> {
+            if (uri != null) {
+                selectedReceiptUri = uri;
+                btnAttachReceipt.setText("Receipt Attached ✅");
+            }
+        });
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -131,6 +144,9 @@ public class MainActivity extends AppCompatActivity {
         // 7. Button Listeners (Only functional if Admin)
         btnAddMember.setOnClickListener(v -> saveMemberToCloud());
         btnAddExpense.setOnClickListener(v -> saveExpenseToCloud());
+        btnAttachReceipt = findViewById(R.id.btnAttachReceipt);
+        btnAttachReceipt.setOnClickListener(v -> pickImageLauncher.launch("image/*"));
+        
         
         findViewById(R.id.btnOpenNotes).setOnClickListener(v -> showNotesDialog());
         
@@ -141,6 +157,8 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnSeeIndividualExpenses).setOnClickListener(v -> showSelectMemberDialog());
 
         findViewById(R.id.btnShareReport).setOnClickListener(v -> shareReportToWhatsApp());
+
+        
         
         
         lvExpenses.setOnItemClickListener((parent, view, position, id) -> {
@@ -321,16 +339,41 @@ public class MainActivity extends AppCompatActivity {
         
         newExpense.setTimestamp(System.currentTimeMillis());
 
+        if (selectedReceiptUri != null) {
+            btnAddExpense.setText("Uploading Receipt...");
+            btnAddExpense.setEnabled(false);
+            
+            com.google.firebase.storage.StorageReference ref = com.google.firebase.storage.FirebaseStorage.getInstance().getReference().child("receipts/" + expenseId);
+            ref.putFile(selectedReceiptUri).addOnSuccessListener(taskSnapshot -> {
+                ref.getDownloadUrl().addOnSuccessListener(uri -> {
+                    newExpense.setReceiptUrl(uri.toString());
+                    saveToFirestoreNow(newExpense, expenseId); // Save with Image URL
+                });
+            }).addOnFailureListener(e -> {
+                Toast.makeText(this, "Image upload failed!", Toast.LENGTH_SHORT).show();
+                saveToFirestoreNow(newExpense, expenseId); // Save anyway without image
+            });
+        } else {
+            saveToFirestoreNow(newExpense, expenseId); // Save normally without image
+        }
+    }
+
+    private void saveToFirestoreNow(Expense newExpense, String expenseId) {
         db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
           .set(newExpense)
           .addOnSuccessListener(aVoid -> {
-              // 🛑 RESET THE UI AFTER SAVING
               etTitle.setText("");
               etAmount.setText("");
-              spinnerPayer.setSelection(0); // Resets Spinner back to "Select Payer"
-              spinnerCategory.setSelection(0); // 🛑 ADD THIS: Resets Category back to default
-              editingExpenseId = "-1";
+              spinnerPayer.setSelection(0);
+              Spinner spinnerCategory = findViewById(R.id.spinnerCategory);
+              spinnerCategory.setSelection(0);
+              
+              selectedReceiptUri = null;
+              btnAttachReceipt.setText("📸 Attach Receipt Image");
               btnAddExpense.setText("Save Expense");
+              btnAddExpense.setEnabled(true);
+              editingExpenseId = "-1";
+              
               Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
           });
     }
@@ -389,6 +432,17 @@ public class MainActivity extends AppCompatActivity {
             involvedNames.append("• ").append(m.getName()).append("\n");
         }
         tvDialogSplitMembers.setText(involvedNames.toString().trim());
+
+        ImageView ivReceipt = view.findViewById(R.id.ivDialogReceipt);
+        if (expense.getReceiptUrl() != null && !expense.getReceiptUrl().isEmpty()) {
+            ivReceipt.setVisibility(View.VISIBLE);
+            com.bumptech.glide.Glide.with(this)
+                .load(expense.getReceiptUrl())
+                .into(ivReceipt);
+        } else {
+            ivReceipt.setVisibility(View.GONE);
+        }
+
 
         // 4. Build the premium Material Dialog
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
@@ -911,10 +965,8 @@ public class MainActivity extends AppCompatActivity {
             .show();
     }
 
-    // ==========================================
     // EXPORT TO WHATSAPP LOGIC
-    // ==========================================
-
+    
     private void shareReportToWhatsApp() {
         TextView tvResults = findViewById(R.id.tvResults);
         String resultsText = tvResults.getText().toString();
