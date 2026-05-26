@@ -319,6 +319,18 @@
                     app:backgroundTint="@color/purple_primary"
                     app:cornerRadius="16dp"
                     app:elevation="2dp"
+                    android:layout_marginBottom="12dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSettleUp"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:text="Log a Payment (Settle Up)"
+                    android:textColor="@color/purple_primary"
+                    app:strokeColor="@color/purple_primary"
+                    app:strokeWidth="2dp"
+                    app:cornerRadius="16dp"
                     android:layout_marginBottom="24dp"/>
 
                 <com.google.android.material.card.MaterialCardView
