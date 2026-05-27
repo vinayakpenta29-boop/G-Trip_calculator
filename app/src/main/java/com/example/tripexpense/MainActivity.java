@@ -27,12 +27,10 @@ import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-
 import android.graphics.Bitmap;
 import android.widget.ImageView;
 import com.google.zxing.BarcodeFormat;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
-
 
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -66,28 +64,6 @@ public class MainActivity extends AppCompatActivity {
     private List<Expense> expenseList = new ArrayList<>();
     
     private String editingExpenseId = "-1"; // Strings for Firebase IDs
-
-    private android.net.Uri selectedReceiptUri = null;
-    private android.net.Uri cameraUri = null;
-    private Button btnAttachReceipt;
-
-    // The modern Android way to pick an image from the gallery
-    private final androidx.activity.result.ActivityResultLauncher<String> pickImageLauncher = 
-        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.GetContent(), uri -> {
-            if (uri != null) {
-                selectedReceiptUri = uri;
-                btnAttachReceipt.setText("Receipt Attached ✅");
-            }
-        });
-
-    private final androidx.activity.result.ActivityResultLauncher<android.net.Uri> takePictureLauncher = 
-        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.TakePicture(), success -> {
-            if (success && cameraUri != null) {
-                selectedReceiptUri = cameraUri;
-                btnAttachReceipt.setText("Receipt Attached ✅");
-            }
-        });
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
         ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, categories);
         spinnerCategory.setAdapter(categoryAdapter);
         
-        
         // 5. Apply Admin vs Viewer UI restrictions
         enforcePermissions();
 
@@ -153,9 +128,6 @@ public class MainActivity extends AppCompatActivity {
         // 7. Button Listeners (Only functional if Admin)
         btnAddMember.setOnClickListener(v -> saveMemberToCloud());
         btnAddExpense.setOnClickListener(v -> saveExpenseToCloud());
-        btnAttachReceipt = findViewById(R.id.btnAttachReceipt);
-        btnAttachReceipt.setOnClickListener(v -> showImageSourceDialog());
-        
         
         findViewById(R.id.btnOpenNotes).setOnClickListener(v -> showNotesDialog());
         
@@ -166,9 +138,6 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnSeeIndividualExpenses).setOnClickListener(v -> showSelectMemberDialog());
 
         findViewById(R.id.btnShareReport).setOnClickListener(v -> shareReportToWhatsApp());
-
-        
-        
         
         lvExpenses.setOnItemClickListener((parent, view, position, id) -> {
             Expense clickedExpense = expenseList.get(position);
@@ -304,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
         String amountStr = etAmount.getText().toString().trim();
         Member selectedPayer = (Member) spinnerPayer.getSelectedItem();
 
-        // 🛑 NEW CHECK: Prevent saving if "Select Payer" is still selected
+        // Prevent saving if "Select Payer" is still selected
         if (selectedPayer == null || selectedPayer.getId().equals("-1")) {
             Toast.makeText(this, "Please select who paid!", Toast.LENGTH_SHORT).show();
             return;
@@ -345,68 +314,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Expense newExpense = new Expense(expenseId, title, amount, selectedPayer.getId(), selectedPayer.getName(), involved, selectedCategory);
-        
         newExpense.setTimestamp(System.currentTimeMillis());
 
-        if (selectedReceiptUri != null) {
-            btnAddExpense.setText("Uploading Receipt...");
-            btnAddExpense.setEnabled(false);
-            
-            try {
-                com.google.firebase.storage.StorageReference ref = com.google.firebase.storage.FirebaseStorage.getInstance().getReference().child("receipts/" + expenseId);
-                ref.putFile(selectedReceiptUri).addOnSuccessListener(taskSnapshot -> {
-                    ref.getDownloadUrl().addOnSuccessListener(uri -> {
-                        newExpense.setReceiptUrl(uri.toString());
-                        saveToFirestoreNow(newExpense, expenseId); 
-                    }).addOnFailureListener(e -> {
-                        Toast.makeText(this, "Failed to get image link", Toast.LENGTH_SHORT).show();
-                        saveToFirestoreNow(newExpense, expenseId);
-                    });
-                }).addOnFailureListener(e -> {
-                    // This tells you exactly WHY it failed (e.g. Rules, Network, or missing JSON)
-                    Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    saveToFirestoreNow(newExpense, expenseId); 
-                });
-            } catch (Exception e) {
-                Toast.makeText(this, "Storage Error: Update google-services.json!", Toast.LENGTH_LONG).show();
-                saveToFirestoreNow(newExpense, expenseId);
-            }
-        } else {
-            saveToFirestoreNow(newExpense, expenseId); 
-        }
+        // 🛑 PURE FIRESTORE SAVE LOGIC
+        db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
+          .set(newExpense)
+          .addOnSuccessListener(aVoid -> {
+              etTitle.setText("");
+              etAmount.setText("");
+              spinnerPayer.setSelection(0);
+              spinnerCategory.setSelection(0);
+              editingExpenseId = "-1";
+              btnAddExpense.setText("Save Expense");
+              Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
+          })
+          .addOnFailureListener(e -> {
+              Toast.makeText(this, "Database Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+          });
     }
 
-    private void saveToFirestoreNow(Expense newExpense, String expenseId) {
-        try {
-            db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
-              .set(newExpense)
-              .addOnSuccessListener(aVoid -> {
-                  etTitle.setText("");
-                  etAmount.setText("");
-                  spinnerPayer.setSelection(0);
-                  Spinner spinnerCategory = findViewById(R.id.spinnerCategory);
-                  spinnerCategory.setSelection(0);
-                  
-                  selectedReceiptUri = null;
-                  btnAttachReceipt.setText("📸 Attach Receipt Image");
-                  btnAddExpense.setText("Save Expense");
-                  btnAddExpense.setEnabled(true);
-                  editingExpenseId = "-1";
-                  
-                  Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
-              })
-              .addOnFailureListener(e -> {
-                  Toast.makeText(this, "Database Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                  btnAddExpense.setText("Save Expense");
-                  btnAddExpense.setEnabled(true);
-              });
-        } catch (Exception e) {
-            Toast.makeText(this, "App Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            btnAddExpense.setText("Save Expense");
-            btnAddExpense.setEnabled(true);
-        }
-    }
-    
     // --- UI HELPERS ---
 
     private void refreshMembersUI() {
@@ -428,7 +354,7 @@ public class MainActivity extends AppCompatActivity {
             tvMemberList.setText(names.substring(0, names.length() - 2));
         }
 
-        // 🛑 THE FIX: Create a separate list just for the Spinner
+        // Create a separate list just for the Spinner
         List<Member> spinnerList = new ArrayList<>();
         // Add our dummy "Select Payer" item at the very top (Index 0)
         spinnerList.add(new Member("-1", "-- Select Payer --")); 
@@ -438,7 +364,6 @@ public class MainActivity extends AppCompatActivity {
         ArrayAdapter<Member> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, spinnerList);
         spinnerPayer.setAdapter(adapter);
     }
-
 
     private void showExpenseDetailsDialog(Expense expense) {
         // 1. Inflate our custom premium layout
@@ -461,17 +386,6 @@ public class MainActivity extends AppCompatActivity {
         }
         tvDialogSplitMembers.setText(involvedNames.toString().trim());
 
-        ImageView ivReceipt = view.findViewById(R.id.ivDialogReceipt);
-        if (expense.getReceiptUrl() != null && !expense.getReceiptUrl().isEmpty()) {
-            ivReceipt.setVisibility(View.VISIBLE);
-            com.bumptech.glide.Glide.with(this)
-                .load(expense.getReceiptUrl())
-                .into(ivReceipt);
-        } else {
-            ivReceipt.setVisibility(View.GONE);
-        }
-
-
         // 4. Build the premium Material Dialog
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
                .setView(view)
@@ -486,23 +400,13 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
-
     private void deleteExpenseConfirm(Expense expense) {
         new AlertDialog.Builder(this)
             .setTitle("Delete Expense?")
-            .setMessage("Are you sure? This will permanently delete the expense and its receipt image.")
+            .setMessage("Are you sure you want to delete this expense?")
             .setPositiveButton("Yes", (dialog, which) -> {
-                
-                // 🛑 NEW: Delete the image file from Firebase Storage first!
-                if (expense.getReceiptUrl() != null && !expense.getReceiptUrl().isEmpty()) {
-                    com.google.firebase.storage.FirebaseStorage.getInstance()
-                        .getReferenceFromUrl(expense.getReceiptUrl()).delete()
-                        .addOnFailureListener(e -> android.util.Log.e("Firebase", "Failed to delete image"));
-                }
-                
-                // Then delete the database document
                 db.collection("trips").document(currentTripId).collection("expenses").document(expense.getId()).delete();
-                Toast.makeText(this, "Expense & Receipt Deleted", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Expense Deleted", Toast.LENGTH_SHORT).show();
             })
             .setNegativeButton("No", null)
             .show();
@@ -785,20 +689,19 @@ public class MainActivity extends AppCompatActivity {
         NoteAdapter noteAdapter = new NoteAdapter(this, noteList);
         lvNotes.setAdapter(noteAdapter);
 
-                // 🛑 ADD THIS: Listen for a Long-Press on any note
+        // Listen for a Long-Press on any note
         lvNotes.setOnItemLongClickListener((parent, view1, position, id) -> {
             Note selectedNote = noteList.get(position);
             showNoteOptionsDialog(selectedNote);
-            return true; // Tells Android we handled the long-click
+            return true; 
         });
-        
 
         // 1. Build and show the pop-up
         androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setView(view)
                 .show();
 
-        // 2. Fetch Notes from Firebase instantly (Oldest at top, Newest at bottom like a chat)
+        // 2. Fetch Notes from Firebase instantly
         db.collection("trips").document(currentTripId).collection("notes")
           .orderBy("timestamp") 
           .addSnapshotListener((value, error) -> {
@@ -821,14 +724,12 @@ public class MainActivity extends AppCompatActivity {
             String text = etNewNote.getText().toString().trim();
             if (!text.isEmpty()) {
                 String noteId = db.collection("trips").document(currentTripId).collection("notes").document().getId();
-                
-                // Note: We use "Member" here. If you track names in SharedPreferences, replace "Member" with their real name!
                 Note newNote = new Note(noteId, text, "Member", System.currentTimeMillis());
 
                 db.collection("trips").document(currentTripId).collection("notes").document(noteId)
                   .set(newNote)
                   .addOnSuccessListener(aVoid -> {
-                      etNewNote.setText(""); // Clear the input box after sending
+                      etNewNote.setText(""); 
                   });
             }
         });
@@ -842,13 +743,11 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // Convert Member List to an Array of Names for the pop-up
         String[] namesArray = new String[memberList.size()];
         for (int i = 0; i < memberList.size(); i++) {
             namesArray[i] = memberList.get(i).getName();
         }
 
-        // Show a premium Material list of names
         new MaterialAlertDialogBuilder(this)
             .setTitle("Whose expenses do you want to see?")
             .setItems(namesArray, (dialog, which) -> {
@@ -866,12 +765,10 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout llContainer = view.findViewById(R.id.llExpenseListContainer);
         TextView tvTotal = view.findViewById(R.id.tvDialogTotalShare);
 
-        // Force uppercase for an extra premium monospace look
         tvName.setText(member.getName().toUpperCase() + "'S SHARE");
 
         double totalShare = 0.0;
 
-        // Loop through ALL expenses to find which ones this member was a part of
         for (Expense e : expenseList) {
             boolean isMemberInvolved = false;
             
@@ -884,17 +781,14 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            // If they are part of this expense, create a beautiful row for it!
             if (isMemberInvolved) {
                 double myShare = e.getAmount() / e.getInvolvedMembers().size();
                 totalShare += myShare;
 
-                // 1. Create the Row Layout
                 LinearLayout row = new LinearLayout(this);
                 row.setOrientation(LinearLayout.HORIZONTAL);
                 row.setPadding(0, 20, 0, 20);
 
-                // 2. The Expense Name (Left side)
                 TextView tvExpenseTitle = new TextView(this);
                 tvExpenseTitle.setText(e.getTitle());
                 tvExpenseTitle.setTextColor(ContextCompat.getColor(this, R.color.text_dark));
@@ -902,19 +796,16 @@ public class MainActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
                 tvExpenseTitle.setLayoutParams(titleParams);
 
-                // 3. The Amount (Right side in Monospace)
                 TextView tvExpenseShare = new TextView(this);
                 tvExpenseShare.setText(String.format("₹%.2f", myShare));
                 tvExpenseShare.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
                 tvExpenseShare.setTextSize(16f);
                 tvExpenseShare.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
 
-                // Add texts to the row, and the row to the container
                 row.addView(tvExpenseTitle);
                 row.addView(tvExpenseShare);
                 llContainer.addView(row);
 
-                // 4. Add a clean grey divider under the row
                 View divider = new View(this);
                 divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1));
                 divider.setBackgroundColor(ContextCompat.getColor(this, R.color.divider_color));
@@ -922,7 +813,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // If they haven't been added to any expenses yet
         if (llContainer.getChildCount() == 0) {
             TextView tvEmpty = new TextView(this);
             tvEmpty.setText("No expenses recorded for this member.");
@@ -930,10 +820,8 @@ public class MainActivity extends AppCompatActivity {
             llContainer.addView(tvEmpty);
         }
 
-        // Set the final bottom total
         tvTotal.setText(String.format("₹%.2f", totalShare));
 
-        // Show the beautiful receipt dialog
         new MaterialAlertDialogBuilder(this)
             .setView(view)
             .setPositiveButton("Close", null)
@@ -960,14 +848,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showEditNoteDialog(Note note) {
-        // Build a premium text box programmatically (no new XML file needed!)
         com.google.android.material.textfield.TextInputLayout layout = new com.google.android.material.textfield.TextInputLayout(this);
         int padding = (int) (20 * getResources().getDisplayMetrics().density); // 20dp padding
         layout.setPadding(padding, padding / 2, padding, 0);
         
         com.google.android.material.textfield.TextInputEditText input = new com.google.android.material.textfield.TextInputEditText(this);
         input.setText(note.getText());
-        input.setSelection(input.getText().length()); // Put cursor at the end
+        input.setSelection(input.getText().length()); 
         layout.addView(input);
 
         new MaterialAlertDialogBuilder(this)
@@ -976,7 +863,6 @@ public class MainActivity extends AppCompatActivity {
             .setPositiveButton("Save", (dialog, which) -> {
                 String newText = input.getText().toString().trim();
                 if (!newText.isEmpty() && !newText.equals(note.getText())) {
-                    // Update the note in Firebase
                     db.collection("trips").document(currentTripId)
                       .collection("notes").document(note.getId())
                       .update("text", newText)
@@ -992,7 +878,6 @@ public class MainActivity extends AppCompatActivity {
             .setTitle("Delete Note?")
             .setMessage("Are you sure you want to delete this note? This cannot be undone.")
             .setPositiveButton("Delete", (dialog, which) -> {
-                // Remove the note from Firebase
                 db.collection("trips").document(currentTripId)
                   .collection("notes").document(note.getId())
                   .delete()
@@ -1008,30 +893,25 @@ public class MainActivity extends AppCompatActivity {
         TextView tvResults = findViewById(R.id.tvResults);
         String resultsText = tvResults.getText().toString();
 
-        // 1. Make sure they actually calculated the splits first!
         if (resultsText.equals("Press calculate to see who owes whom.") || resultsText.isEmpty()) {
             Toast.makeText(this, "Please calculate the splits first!", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 2. Get the Trip Name to use in the title
         String tripName = getIntent().getStringExtra("TRIP_NAME");
         if (tripName == null) {
             tripName = "Our Trip";
         }
 
-        // 3. Build a beautifully formatted WhatsApp message using asterisks for bolding
         String shareBody = "✈️ *" + tripName + " - Final Settlement* ✈️\n\n" +
                            "Here is the final breakdown of who owes whom:\n\n" +
                            resultsText + "\n\n" +
                            "📊 _Calculated instantly with Trip Expense Calculator_";
 
-        // 4. Create the Android Share Intent
         android.content.Intent sharingIntent = new android.content.Intent(android.content.Intent.ACTION_SEND);
         sharingIntent.setType("text/plain");
         sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
         
-        // 5. Try to force WhatsApp to open. If they don't have it installed, open the normal share menu!
         sharingIntent.setPackage("com.whatsapp");
         try {
             startActivity(sharingIntent);
@@ -1054,7 +934,6 @@ public class MainActivity extends AppCompatActivity {
         Spinner spinnerReceiver = view.findViewById(R.id.spinnerReceiver);
         EditText etPaymentAmount = view.findViewById(R.id.etPaymentAmount);
 
-        // Populate both spinners with the member list
         ArrayAdapter<Member> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, memberList);
         spinnerSender.setAdapter(adapter);
         spinnerReceiver.setAdapter(adapter);
@@ -1066,7 +945,6 @@ public class MainActivity extends AppCompatActivity {
                 Member receiver = (Member) spinnerReceiver.getSelectedItem();
                 String amountStr = etPaymentAmount.getText().toString().trim();
 
-                // 1. Validate the input
                 if (amountStr.isEmpty()) {
                     Toast.makeText(this, "Please enter an amount", Toast.LENGTH_SHORT).show();
                     return;
@@ -1079,18 +957,15 @@ public class MainActivity extends AppCompatActivity {
                 double amount = Double.parseDouble(amountStr);
                 String expenseId = db.collection("trips").document(currentTripId).collection("expenses").document().getId();
 
-                // 2. The Accounting Trick:
-                // Sender is the Payer. Receiver is the ONLY involved member.
                 List<Member> involved = new ArrayList<>();
                 involved.add(receiver);
 
                 String title = sender.getName() + " Paid to " + receiver.getName();
-                String category = "✅ Payment"; // Using a checkmark emoji for the category!
+                String category = "✅ Payment"; 
 
                 Expense paymentExpense = new Expense(expenseId, title, amount, sender.getId(), sender.getName(), involved, category);
                 paymentExpense.setTimestamp(System.currentTimeMillis());
 
-                // 3. Save to Firebase
                 db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
                   .set(paymentExpense)
                   .addOnSuccessListener(aVoid -> {
@@ -1098,33 +973,6 @@ public class MainActivity extends AppCompatActivity {
                   });
             })
             .setNegativeButton("Cancel", null)
-            .show();
-    }
-
-    private void showImageSourceDialog() {
-        String[] options = {"📸 Take Photo", "🖼️ Choose from Gallery", "❌ Remove Selected Image"};
-        
-        new MaterialAlertDialogBuilder(this)
-            .setTitle("Attach Receipt")
-            .setItems(options, (dialog, which) -> {
-                if (which == 0) {
-                    // Open Camera securely
-                    try {
-                        java.io.File tempFile = java.io.File.createTempFile("receipt_", ".jpg", getCacheDir());
-                        // 🛑 THE FIX: Hardcoded your exact package name here
-                        cameraUri = androidx.core.content.FileProvider.getUriForFile(this, "com.example.tripexpense.fileprovider", tempFile);
-                        takePictureLauncher.launch(cameraUri);
-                    } catch (Exception e) {
-                        Toast.makeText(this, "Camera Error: Check Manifest Provider", Toast.LENGTH_LONG).show();
-                        e.printStackTrace();
-                    }
-                } else if (which == 1) {
-                    pickImageLauncher.launch("image/*");
-                } else if (which == 2) {
-                    selectedReceiptUri = null;
-                    btnAttachReceipt.setText("📸 Attach Receipt Image");
-                }
-            })
             .show();
     }
 }
