@@ -352,42 +352,61 @@ public class MainActivity extends AppCompatActivity {
             btnAddExpense.setText("Uploading Receipt...");
             btnAddExpense.setEnabled(false);
             
-            com.google.firebase.storage.StorageReference ref = com.google.firebase.storage.FirebaseStorage.getInstance().getReference().child("receipts/" + expenseId);
-            ref.putFile(selectedReceiptUri).addOnSuccessListener(taskSnapshot -> {
-                ref.getDownloadUrl().addOnSuccessListener(uri -> {
-                    newExpense.setReceiptUrl(uri.toString());
-                    saveToFirestoreNow(newExpense, expenseId); // Save with Image URL
+            try {
+                com.google.firebase.storage.StorageReference ref = com.google.firebase.storage.FirebaseStorage.getInstance().getReference().child("receipts/" + expenseId);
+                ref.putFile(selectedReceiptUri).addOnSuccessListener(taskSnapshot -> {
+                    ref.getDownloadUrl().addOnSuccessListener(uri -> {
+                        newExpense.setReceiptUrl(uri.toString());
+                        saveToFirestoreNow(newExpense, expenseId); 
+                    }).addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to get image link", Toast.LENGTH_SHORT).show();
+                        saveToFirestoreNow(newExpense, expenseId);
+                    });
+                }).addOnFailureListener(e -> {
+                    // This tells you exactly WHY it failed (e.g. Rules, Network, or missing JSON)
+                    Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    saveToFirestoreNow(newExpense, expenseId); 
                 });
-            }).addOnFailureListener(e -> {
-                Toast.makeText(this, "Image upload failed!", Toast.LENGTH_SHORT).show();
-                saveToFirestoreNow(newExpense, expenseId); // Save anyway without image
-            });
+            } catch (Exception e) {
+                Toast.makeText(this, "Storage Error: Update google-services.json!", Toast.LENGTH_LONG).show();
+                saveToFirestoreNow(newExpense, expenseId);
+            }
         } else {
-            saveToFirestoreNow(newExpense, expenseId); // Save normally without image
+            saveToFirestoreNow(newExpense, expenseId); 
         }
     }
 
     private void saveToFirestoreNow(Expense newExpense, String expenseId) {
-        db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
-          .set(newExpense)
-          .addOnSuccessListener(aVoid -> {
-              etTitle.setText("");
-              etAmount.setText("");
-              spinnerPayer.setSelection(0);
-              Spinner spinnerCategory = findViewById(R.id.spinnerCategory);
-              spinnerCategory.setSelection(0);
-              
-              selectedReceiptUri = null;
-              btnAttachReceipt.setText("📸 Attach Receipt Image");
-              btnAddExpense.setText("Save Expense");
-              btnAddExpense.setEnabled(true);
-              editingExpenseId = "-1";
-              
-              Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
-          });
+        try {
+            db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
+              .set(newExpense)
+              .addOnSuccessListener(aVoid -> {
+                  etTitle.setText("");
+                  etAmount.setText("");
+                  spinnerPayer.setSelection(0);
+                  Spinner spinnerCategory = findViewById(R.id.spinnerCategory);
+                  spinnerCategory.setSelection(0);
+                  
+                  selectedReceiptUri = null;
+                  btnAttachReceipt.setText("📸 Attach Receipt Image");
+                  btnAddExpense.setText("Save Expense");
+                  btnAddExpense.setEnabled(true);
+                  editingExpenseId = "-1";
+                  
+                  Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
+              })
+              .addOnFailureListener(e -> {
+                  Toast.makeText(this, "Database Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                  btnAddExpense.setText("Save Expense");
+                  btnAddExpense.setEnabled(true);
+              });
+        } catch (Exception e) {
+            Toast.makeText(this, "App Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            btnAddExpense.setText("Save Expense");
+            btnAddExpense.setEnabled(true);
+        }
     }
-
-
+    
     // --- UI HELPERS ---
 
     private void refreshMembersUI() {
@@ -1092,21 +1111,20 @@ public class MainActivity extends AppCompatActivity {
                     // Open Camera securely
                     try {
                         java.io.File tempFile = java.io.File.createTempFile("receipt_", ".jpg", getCacheDir());
-                        cameraUri = androidx.core.content.FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", tempFile);
+                        // 🛑 THE FIX: Hardcoded your exact package name here
+                        cameraUri = androidx.core.content.FileProvider.getUriForFile(this, "com.example.tripexpense.fileprovider", tempFile);
                         takePictureLauncher.launch(cameraUri);
                     } catch (Exception e) {
-                        Toast.makeText(this, "Error starting camera", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Camera Error: Check Manifest Provider", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
                     }
                 } else if (which == 1) {
-                    // Open Gallery
                     pickImageLauncher.launch("image/*");
                 } else if (which == 2) {
-                    // Clear the current selection
                     selectedReceiptUri = null;
                     btnAttachReceipt.setText("📸 Attach Receipt Image");
                 }
             })
             .show();
     }
-
 }
