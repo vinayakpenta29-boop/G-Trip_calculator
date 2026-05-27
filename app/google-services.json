@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "462461074509",
+    "project_id": "tripexpenseappby",
+    "storage_bucket": "tripexpenseappby.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:462461074509:android:cb69c06612d5ea10c13004",
+        "android_client_info": {
+          "package_name": "com.example.tripexpense"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3jYm8GelH_T0LqypSu0rEGKFWSamRd0w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
