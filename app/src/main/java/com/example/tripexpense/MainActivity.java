@@ -35,6 +35,12 @@ import com.journeyapps.barcodescanner.BarcodeEncoder;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.data.PieData;
+import com.github.mikephil.charting.data.PieDataSet;
+import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.utils.ColorTemplate;
+
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -231,6 +237,7 @@ public class MainActivity extends AppCompatActivity {
                   // Auto-update calculations when new data comes in
                   calculateSplits();
                   updateSummaryTable();
+                  updatePieChart();
                   
                   // Update the Root Trip document so Home Screen total stays accurate
                   if (isAdmin) {
@@ -974,5 +981,60 @@ public class MainActivity extends AppCompatActivity {
             })
             .setNegativeButton("Cancel", null)
             .show();
+    }
+
+    // ==========================================
+    // PIE CHART LOGIC
+    // ==========================================
+
+    private void updatePieChart() {
+        PieChart pieChart = findViewById(R.id.pieChart);
+        Map<String, Float> categoryTotals = new HashMap<>();
+
+        // 1. Add up all expenses by category
+        for (Expense e : expenseList) {
+            String cat = e.getCategory();
+            // Ignore payments and empty categories so they don't mess up the chart!
+            if (cat == null || cat.equals("✅ Payment") || cat.equals("-- Select Category --")) {
+                continue; 
+            }
+            
+            float currentTotal = categoryTotals.containsKey(cat) ? categoryTotals.get(cat) : 0f;
+            categoryTotals.put(cat, currentTotal + (float) e.getAmount());
+        }
+
+        // 2. If there are no expenses yet, clear the chart
+        if (categoryTotals.isEmpty()) {
+            pieChart.clear();
+            return;
+        }
+
+        // 3. Convert the totals into Pie Chart "Slices"
+        List<PieEntry> entries = new ArrayList<>();
+        for (Map.Entry<String, Float> entry : categoryTotals.entrySet()) {
+            // entry.getKey() is the category name (e.g., "🍔 Food & Drinks")
+            entries.add(new PieEntry(entry.getValue(), entry.getKey()));
+        }
+
+        // 4. Style the Chart beautifully
+        PieDataSet dataSet = new PieDataSet(entries, "");
+        dataSet.setColors(ColorTemplate.MATERIAL_COLORS); // Vibrant modern colors
+        dataSet.setValueTextSize(14f);
+        dataSet.setValueTextColor(Color.WHITE);
+        dataSet.setValueTypeface(Typeface.DEFAULT_BOLD);
+
+        PieData data = new PieData(dataSet);
+        pieChart.setData(data);
+        
+        // Premium UI tweaks
+        pieChart.getDescription().setEnabled(false); // Hide the generic description
+        pieChart.setCenterText("Trip\nExpenses");
+        pieChart.setCenterTextSize(16f);
+        pieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
+        pieChart.setDrawEntryLabels(false); // Hide labels on the pie slices to keep it clean
+        pieChart.getLegend().setWordWrapEnabled(true); // Allow legend to drop to next line
+        pieChart.animateY(1000); // Cool spin animation when it loads!
+        
+        pieChart.invalidate(); // Refresh the chart
     }
 }
