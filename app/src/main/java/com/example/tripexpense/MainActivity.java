@@ -68,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
     private String editingExpenseId = "-1"; // Strings for Firebase IDs
 
     private android.net.Uri selectedReceiptUri = null;
+    private android.net.Uri cameraUri = null;
     private Button btnAttachReceipt;
 
     // The modern Android way to pick an image from the gallery
@@ -75,6 +76,14 @@ public class MainActivity extends AppCompatActivity {
         registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.GetContent(), uri -> {
             if (uri != null) {
                 selectedReceiptUri = uri;
+                btnAttachReceipt.setText("Receipt Attached ✅");
+            }
+        });
+
+    private final androidx.activity.result.ActivityResultLauncher<android.net.Uri> takePictureLauncher = 
+        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.TakePicture(), success -> {
+            if (success && cameraUri != null) {
+                selectedReceiptUri = cameraUri;
                 btnAttachReceipt.setText("Receipt Attached ✅");
             }
         });
@@ -145,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
         btnAddMember.setOnClickListener(v -> saveMemberToCloud());
         btnAddExpense.setOnClickListener(v -> saveExpenseToCloud());
         btnAttachReceipt = findViewById(R.id.btnAttachReceipt);
-        btnAttachReceipt.setOnClickListener(v -> pickImageLauncher.launch("image/*"));
+        btnAttachReceipt.setOnClickListener(v -> showImageSourceDialog());
         
         
         findViewById(R.id.btnOpenNotes).setOnClickListener(v -> showNotesDialog());
@@ -462,10 +471,19 @@ public class MainActivity extends AppCompatActivity {
     private void deleteExpenseConfirm(Expense expense) {
         new AlertDialog.Builder(this)
             .setTitle("Delete Expense?")
-            .setMessage("Are you sure?")
+            .setMessage("Are you sure? This will permanently delete the expense and its receipt image.")
             .setPositiveButton("Yes", (dialog, which) -> {
+                
+                // 🛑 NEW: Delete the image file from Firebase Storage first!
+                if (expense.getReceiptUrl() != null && !expense.getReceiptUrl().isEmpty()) {
+                    com.google.firebase.storage.FirebaseStorage.getInstance()
+                        .getReferenceFromUrl(expense.getReceiptUrl()).delete()
+                        .addOnFailureListener(e -> android.util.Log.e("Firebase", "Failed to delete image"));
+                }
+                
+                // Then delete the database document
                 db.collection("trips").document(currentTripId).collection("expenses").document(expense.getId()).delete();
-                Toast.makeText(this, "Expense Deleted", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Expense & Receipt Deleted", Toast.LENGTH_SHORT).show();
             })
             .setNegativeButton("No", null)
             .show();
@@ -1061,6 +1079,33 @@ public class MainActivity extends AppCompatActivity {
                   });
             })
             .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void showImageSourceDialog() {
+        String[] options = {"📸 Take Photo", "🖼️ Choose from Gallery", "❌ Remove Selected Image"};
+        
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Attach Receipt")
+            .setItems(options, (dialog, which) -> {
+                if (which == 0) {
+                    // Open Camera securely
+                    try {
+                        java.io.File tempFile = java.io.File.createTempFile("receipt_", ".jpg", getCacheDir());
+                        cameraUri = androidx.core.content.FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", tempFile);
+                        takePictureLauncher.launch(cameraUri);
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Error starting camera", Toast.LENGTH_SHORT).show();
+                    }
+                } else if (which == 1) {
+                    // Open Gallery
+                    pickImageLauncher.launch("image/*");
+                } else if (which == 2) {
+                    // Clear the current selection
+                    selectedReceiptUri = null;
+                    btnAttachReceipt.setText("📸 Attach Receipt Image");
+                }
+            })
             .show();
     }
 
