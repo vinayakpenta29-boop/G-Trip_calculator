@@ -228,18 +228,6 @@
                             android:paddingHorizontal="16dp"
                             android:layout_marginBottom="16dp" />
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnAttachReceipt"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="50dp"
-                            android:text="📸 Attach Receipt Image"
-                            android:textColor="@color/purple_primary"
-                            app:strokeColor="@color/purple_primary"
-                            app:cornerRadius="12dp"
-                            android:layout_marginBottom="16dp"/>
-
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
