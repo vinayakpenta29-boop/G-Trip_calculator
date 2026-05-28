@@ -1018,7 +1018,18 @@ public class MainActivity extends AppCompatActivity {
 
         // 4. Style the Chart beautifully
         PieDataSet dataSet = new PieDataSet(entries, "");
-        dataSet.setColors(ColorTemplate.MATERIAL_COLORS); // Vibrant modern colors
+        
+        // 🛑 THE COLOR FIX: Create a custom list of 7 distinct, vibrant Material colors
+        ArrayList<Integer> customColors = new ArrayList<>();
+        customColors.add(Color.parseColor("#F44336")); // Red
+        customColors.add(Color.parseColor("#2196F3")); // Blue
+        customColors.add(Color.parseColor("#4CAF50")); // Green
+        customColors.add(Color.parseColor("#FFC107")); // Amber
+        customColors.add(Color.parseColor("#9C27B0")); // Purple
+        customColors.add(Color.parseColor("#FF9800")); // Orange
+        customColors.add(Color.parseColor("#00BCD4")); // Cyan
+        dataSet.setColors(customColors);
+
         dataSet.setValueTextSize(14f);
         dataSet.setValueTextColor(Color.WHITE);
         dataSet.setValueTypeface(Typeface.DEFAULT_BOLD);
@@ -1027,14 +1038,25 @@ public class MainActivity extends AppCompatActivity {
         pieChart.setData(data);
         
         // Premium UI tweaks
-        pieChart.getDescription().setEnabled(false); // Hide the generic description
+        pieChart.getDescription().setEnabled(false);
         pieChart.setCenterText("Trip\nExpenses");
         pieChart.setCenterTextSize(16f);
         pieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
-        pieChart.setDrawEntryLabels(false); // Hide labels on the pie slices to keep it clean
-        pieChart.getLegend().setWordWrapEnabled(true); // Allow legend to drop to next line
-        pieChart.animateY(1000); // Cool spin animation when it loads!
+        pieChart.setDrawEntryLabels(false); 
         
-        pieChart.invalidate(); // Refresh the chart
+        // 🛑 THE LEGEND FIX: Force it to wrap properly with extra spacing
+        com.github.mikephil.charting.components.Legend legend = pieChart.getLegend();
+        legend.setWordWrapEnabled(true);
+        legend.setHorizontalAlignment(com.github.mikephil.charting.components.Legend.LegendHorizontalAlignment.CENTER);
+        legend.setTextSize(12f);
+        legend.setFormSize(12f);
+        legend.setXEntrySpace(15f); // Space between items side-to-side
+        legend.setYEntrySpace(10f); // Space between rows top-to-bottom
+        
+        // Add padding to the bottom of the pie so it doesn't overlap the legend!
+        pieChart.setExtraBottomOffset(30f); 
+        
+        pieChart.animateY(1000); 
+        pieChart.invalidate(); 
     }
 }
