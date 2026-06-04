@@ -145,10 +145,24 @@ public class MainActivity extends AppCompatActivity {
 
         findViewById(R.id.btnShareReport).setOnClickListener(v -> shareReportToWhatsApp());
         
+                // 🛑 BIND THE NEW FILTER SPINNER
+        spinnerFilterPayer = findViewById(R.id.spinnerFilterPayer);
+        spinnerFilterPayer.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                updateExpenseListUI(); // Re-filter when they pick a new name
+            }
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        
+        // 🛑 UPDATE THE CLICK LISTENER SO IT WORKS WITH THE FILTER
         lvExpenses.setOnItemClickListener((parent, view, position, id) -> {
-            Expense clickedExpense = expenseList.get(position);
+            // Get the item directly from the screen, not the raw list!
+            Expense clickedExpense = (Expense) parent.getItemAtPosition(position);
             showExpenseDetailsDialog(clickedExpense);
         });
+
 
         // 8. Start Real-time Listeners
         listenForMembers();
@@ -228,12 +242,12 @@ public class MainActivity extends AppCompatActivity {
                       expenseList.add(e);
                       total += e.getAmount();
                   }
-
+                  
                   Collections.sort(expenseList, (e1, e2) -> Long.compare(e2.getTimestamp(), e1.getTimestamp()));
                   
-                  ExpenseAdapter adapter = new ExpenseAdapter(this, expenseList);
-                  lvExpenses.setAdapter(adapter);
-                  
+                  // 🛑 CHANGE THIS: Send the data through our filter first!
+                  updateExpenseListUI();
+
                   // Auto-update calculations when new data comes in
                   calculateSplits();
                   updateSummaryTable();
@@ -370,6 +384,21 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayAdapter<Member> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, spinnerList);
         spinnerPayer.setAdapter(adapter);
+
+                // 🛑 ADD THIS: Set up the Filter Spinner options
+        List<Member> filterList = new ArrayList<>();
+        filterList.add(new Member("-2", "Filter: All")); // Default option
+        filterList.addAll(memberList);
+
+        // Remember what they currently have selected so it doesn't jump back to "All" randomly
+        int currentFilterPos = spinnerFilterPayer.getSelectedItemPosition();
+        
+        ArrayAdapter<Member> filterAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, filterList);
+        spinnerFilterPayer.setAdapter(filterAdapter);
+        
+        if (currentFilterPos >= 0 && currentFilterPos < filterList.size()) {
+            spinnerFilterPayer.setSelection(currentFilterPos);
+        }
     }
 
     private void showExpenseDetailsDialog(Expense expense) {
@@ -1058,5 +1087,31 @@ public class MainActivity extends AppCompatActivity {
         
         pieChart.animateY(1000); 
         pieChart.invalidate(); 
+        
+    // ==========================================
+    // EXPENSE FILTERING LOGIC
+    // ==========================================
+
+    private void updateExpenseListUI() {
+        if (spinnerFilterPayer.getSelectedItem() == null) return;
+        
+        Member selectedFilter = (Member) spinnerFilterPayer.getSelectedItem();
+        List<Expense> filteredList = new ArrayList<>();
+
+        if (selectedFilter.getId().equals("-2")) {
+            // "Filter: All" is selected, so show everything!
+            filteredList.addAll(expenseList);
+        } else {
+            // Loop through and only grab the expenses paid by the selected person
+            for (Expense e : expenseList) {
+                if (e.getPayerId().equals(selectedFilter.getId())) {
+                    filteredList.add(e);
+                }
+            }
+        }
+
+        // Draw the filtered list onto the screen
+        ExpenseAdapter adapter = new ExpenseAdapter(this, filteredList);
+        lvExpenses.setAdapter(adapter);
     }
 }
