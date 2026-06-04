@@ -279,6 +279,13 @@
                             android:layout_marginStart="16dp"
                             android:layout_marginBottom="8dp" />
 
+     <Spinner
+                            android:id="@+id/spinnerFilterPayer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_input"
+                            android:paddingHorizontal="12dp"/>
+
                         <com.example.tripexpense.NonScrollListView
                             android:id="@+id/lvExpenses"
                             android:layout_width="match_parent"
