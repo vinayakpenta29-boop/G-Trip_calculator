@@ -253,6 +253,7 @@ public class MainActivity extends AppCompatActivity {
                   calculateSplits();
                   updateSummaryTable();
                   updatePieChart();
+                  updateDayWiseSummary();
                   
                   // Update the Root Trip document so Home Screen total stays accurate
                   if (isAdmin) {
@@ -1116,5 +1117,84 @@ public class MainActivity extends AppCompatActivity {
         // Draw the filtered list onto the screen
         ExpenseAdapter adapter = new ExpenseAdapter(this, filteredList);
         lvExpenses.setAdapter(adapter);
+    }
+
+    // ==========================================
+    // DAY-WISE SPENDING LOGIC
+    // ==========================================
+
+    private void updateDayWiseSummary() {
+        LinearLayout llDayWiseSummary = findViewById(R.id.llDayWiseSummary);
+        llDayWiseSummary.removeAllViews(); // Clear old data
+
+        if (expenseList.isEmpty()) {
+            return; // Nothing to show yet
+        }
+
+        // 1. Group expenses by calendar date (yyyy-MM-dd)
+        Map<String, Double> dailyTotals = new HashMap<>();
+        java.text.SimpleDateFormat sortableFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+        java.text.SimpleDateFormat displayFormat = new java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault());
+
+        for (Expense e : expenseList) {
+            // 🛑 CRITICAL: Ignore "Payments" so settling debts doesn't artificially inflate the daily spending!
+            if ("✅ Payment".equals(e.getCategory())) {
+                continue;
+            }
+
+            String dateKey = sortableFormat.format(new java.util.Date(e.getTimestamp()));
+            double currentTotal = dailyTotals.containsKey(dateKey) ? dailyTotals.get(dateKey) : 0.0;
+            dailyTotals.put(dateKey, currentTotal + e.getAmount());
+        }
+
+        // 2. Sort the dates chronologically
+        List<String> sortedDates = new ArrayList<>(dailyTotals.keySet());
+        Collections.sort(sortedDates); 
+
+        // 3. Build the UI rows dynamically
+        int dayNumber = 1;
+        for (String dateKey : sortedDates) {
+            double total = dailyTotals.get(dateKey);
+
+            // Format the date to look nice (e.g., "Jun 04")
+            String niceDate = dateKey;
+            try {
+                niceDate = displayFormat.format(sortableFormat.parse(dateKey));
+            } catch (Exception ignored) {}
+
+            // Create the Row
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setPadding(0, 16, 0, 16); // Nice vertical padding
+
+            // Left side: "Day 1 (Jun 04)"
+            TextView tvDay = new TextView(this);
+            tvDay.setText("Day " + dayNumber + "  (" + niceDate + ")");
+            tvDay.setTextColor(ContextCompat.getColor(this, R.color.text_dark));
+            tvDay.setTextSize(14f);
+            tvDay.setTypeface(Typeface.create("monospace", Typeface.BOLD));
+            LinearLayout.LayoutParams dayParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            tvDay.setLayoutParams(dayParams);
+
+            // Right side: Amount
+            TextView tvTotal = new TextView(this);
+            tvTotal.setText(String.format("₹%.2f", total));
+            tvTotal.setTextColor(ContextCompat.getColor(this, R.color.purple_primary));
+            tvTotal.setTextSize(14f);
+            tvTotal.setTypeface(Typeface.create("monospace", Typeface.BOLD));
+
+            // Add text to row
+            row.addView(tvDay);
+            row.addView(tvTotal);
+            llDayWiseSummary.addView(row);
+
+            // Add a thin grey divider line under the row
+            View divider = new View(this);
+            divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1));
+            divider.setBackgroundColor(ContextCompat.getColor(this, R.color.divider_color));
+            llDayWiseSummary.addView(divider);
+
+            dayNumber++;
+        }
     }
 }
