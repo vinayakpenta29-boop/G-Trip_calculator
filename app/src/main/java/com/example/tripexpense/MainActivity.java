@@ -1087,6 +1087,8 @@ public class MainActivity extends AppCompatActivity {
         
         pieChart.animateY(1000); 
         pieChart.invalidate(); 
+
+    }
         
     // ==========================================
     // EXPENSE FILTERING LOGIC
