@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinnerPayer;
     private LinearLayout llInvolvedMembers;
     private NonScrollListView lvExpenses;
+    private Spinner spinnerFilterPayer;
     private Button btnAddExpense, btnAddMember;
 
     private List<Member> memberList = new ArrayList<>();
