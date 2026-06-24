@@ -512,6 +512,18 @@
                     app:cornerRadius="16dp" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSeeGroupExpenses"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="16dp"
+                    android:text="See Family / Group Summary"
+                    android:textColor="@color/purple_primary"
+                    app:strokeColor="@color/purple_primary"
+                    app:strokeWidth="2dp"
+                    app:cornerRadius="16dp" />
+                
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnShareReport"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
