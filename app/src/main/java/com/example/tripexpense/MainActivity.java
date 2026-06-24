@@ -144,6 +144,8 @@ public class MainActivity extends AppCompatActivity {
         
         findViewById(R.id.btnSeeIndividualExpenses).setOnClickListener(v -> showSelectMemberDialog());
 
+        findViewById(R.id.btnSeeGroupExpenses).setOnClickListener(v -> showSelectGroupDialog());
+        
         findViewById(R.id.btnShareReport).setOnClickListener(v -> shareReportToWhatsApp());
         
                 // 🛑 BIND THE NEW FILTER SPINNER
@@ -865,6 +867,146 @@ public class MainActivity extends AppCompatActivity {
             .setPositiveButton("Close", null)
             .show();
     }
+
+    // ==========================================
+    // FAMILY / GROUP SETTLEMENT LOGIC
+    // ==========================================
+
+    private void showSelectGroupDialog() {
+        if (memberList.isEmpty()) {
+            Toast.makeText(this, "No members available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 1. Create arrays for the checklist
+        String[] namesArray = new String[memberList.size()];
+        boolean[] checkedItems = new boolean[memberList.size()];
+        for (int i = 0; i < memberList.size(); i++) {
+            namesArray[i] = memberList.get(i).getName();
+            checkedItems[i] = false; // Default to unchecked
+        }
+
+        List<Member> selectedGroup = new ArrayList<>();
+
+        // 2. Show the Material Multi-Choice Checkbox Dialog
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Select Family Members")
+            .setMultiChoiceItems(namesArray, checkedItems, (dialog, which, isChecked) -> {
+                checkedItems[which] = isChecked;
+            })
+            .setPositiveButton("View Summary", (dialog, which) -> {
+                selectedGroup.clear();
+                for (int i = 0; i < checkedItems.length; i++) {
+                    if (checkedItems[i]) selectedGroup.add(memberList.get(i));
+                }
+                
+                if (selectedGroup.isEmpty()) {
+                    Toast.makeText(this, "Select at least one member", Toast.LENGTH_SHORT).show();
+                } else {
+                    showGroupExpensesDialog(selectedGroup); // Run the math!
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void showGroupExpensesDialog(List<Member> group) {
+        View view = getLayoutInflater().inflate(R.layout.dialog_group_expenses, null);
+        TextView tvTitle = view.findViewById(R.id.tvDialogGroupTitle);
+        LinearLayout llContainer = view.findViewById(R.id.llGroupExpenseListContainer);
+        TextView tvGroupPaid = view.findViewById(R.id.tvGroupPaid);
+        TextView tvGroupShare = view.findViewById(R.id.tvGroupShare);
+        TextView tvGroupBalance = view.findViewById(R.id.tvGroupBalance);
+
+        // 1. Build the Group Name String
+        StringBuilder groupNames = new StringBuilder();
+        List<String> groupIds = new ArrayList<>();
+        for (Member m : group) {
+            groupNames.append(m.getName()).append(", ");
+            groupIds.add(m.getId());
+        }
+        tvTitle.setText(groupNames.substring(0, groupNames.length() - 2).toUpperCase() + "\nSUMMARY");
+
+        double totalPaid = 0.0;
+        double totalShare = 0.0;
+
+        // 2. Do the heavy lifting: Calculate the group's exact share and payments
+        for (Expense e : expenseList) {
+            // A. Did anyone in this family pay for this?
+            if (groupIds.contains(e.getPayerId())) {
+                totalPaid += e.getAmount();
+            }
+
+            // B. How much of this expense belongs to this family?
+            double groupShareOfThisExpense = 0.0;
+            if (e.getInvolvedMembers() != null && !e.getInvolvedMembers().isEmpty()) {
+                double perPersonShare = e.getAmount() / e.getInvolvedMembers().size();
+                for (Member m : e.getInvolvedMembers()) {
+                    if (groupIds.contains(m.getId())) {
+                        groupShareOfThisExpense += perPersonShare;
+                    }
+                }
+            }
+            totalShare += groupShareOfThisExpense;
+
+            // C. If the family was involved in this expense, add it to the UI list!
+            if (groupShareOfThisExpense > 0 || groupIds.contains(e.getPayerId())) {
+                LinearLayout row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.setPadding(0, 20, 0, 20);
+
+                TextView tvExpenseTitle = new TextView(this);
+                tvExpenseTitle.setText(e.getTitle());
+                tvExpenseTitle.setTextColor(ContextCompat.getColor(this, R.color.text_dark));
+                tvExpenseTitle.setTextSize(14f);
+                LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                tvExpenseTitle.setLayoutParams(titleParams);
+
+                TextView tvExpenseDetail = new TextView(this);
+                String detail = "";
+                if (groupIds.contains(e.getPayerId())) detail += "Paid: ₹" + String.format("%.2f", e.getAmount()) + "\n";
+                if (groupShareOfThisExpense > 0) detail += "Share: ₹" + String.format("%.2f", groupShareOfThisExpense);
+                
+                tvExpenseDetail.setText(detail.trim());
+                tvExpenseDetail.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+                tvExpenseDetail.setTextSize(14f);
+                tvExpenseDetail.setGravity(Gravity.END);
+                tvExpenseDetail.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
+
+                row.addView(tvExpenseTitle);
+                row.addView(tvExpenseDetail);
+                llContainer.addView(row);
+
+                View divider = new View(this);
+                divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1));
+                divider.setBackgroundColor(ContextCompat.getColor(this, R.color.divider_color));
+                llContainer.addView(divider);
+            }
+        }
+
+        // 3. Final calculations and UI formatting
+        double balance = totalPaid - totalShare;
+
+        tvGroupPaid.setText("Total Paid: ₹" + String.format("%.2f", totalPaid));
+        tvGroupShare.setText("Total Share: ₹" + String.format("%.2f", totalShare));
+        
+        if (balance > 0.01) {
+            tvGroupBalance.setTextColor(Color.parseColor("#388E3C")); // Green
+            tvGroupBalance.setText("Net Balance: +₹" + String.format("%.2f", balance) + "\n(Family Gets Back)");
+        } else if (balance < -0.01) {
+            tvGroupBalance.setTextColor(Color.parseColor("#D32F2F")); // Red
+            tvGroupBalance.setText("Net Balance: ₹" + String.format("%.2f", balance) + "\n(Family Owes)");
+        } else {
+            tvGroupBalance.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+            tvGroupBalance.setText("Net Balance: ₹0.00\n(Fully Settled)");
+        }
+
+        new MaterialAlertDialogBuilder(this)
+            .setView(view)
+            .setPositiveButton("Close", null)
+            .show();
+    }
+
 
     // ==========================================
     // NOTE EDIT & DELETE LOGIC
