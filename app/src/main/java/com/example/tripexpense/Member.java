@@ -1,3 +1,5 @@
+package com.example.tripexpense;
+
 public class Member {
     private String id;
     private String name;
