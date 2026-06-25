@@ -60,7 +60,11 @@ public class MainActivity extends AppCompatActivity {
     private TextView tabMembers, tabExpenses, tabSettlement;
     private LinearLayout layoutMembers, layoutExpenses, layoutSettlement;
     private EditText etMemberName, etTitle, etAmount;
-    private TextView tvMemberList, tvResults;
+    
+    // 🛑 CHANGED: tvMemberList is now llMemberList
+    private TextView tvResults;
+    private LinearLayout llMemberList;
+    
     private Spinner spinnerPayer;
     private LinearLayout llInvolvedMembers;
     private NonScrollListView lvExpenses;
@@ -111,7 +115,10 @@ public class MainActivity extends AppCompatActivity {
         etMemberName = findViewById(R.id.etMemberName);
         etTitle = findViewById(R.id.etTitle);
         etAmount = findViewById(R.id.etAmount);
-        tvMemberList = findViewById(R.id.tvMemberList);
+        
+        // 🛑 BIND THE NEW LAYOUT LIST
+        llMemberList = findViewById(R.id.llMemberList);
+        
         tvResults = findViewById(R.id.tvResults);
         spinnerPayer = findViewById(R.id.spinnerPayer);
         llInvolvedMembers = findViewById(R.id.llInvolvedMembers);
@@ -148,7 +155,6 @@ public class MainActivity extends AppCompatActivity {
         
         findViewById(R.id.btnShareReport).setOnClickListener(v -> shareReportToWhatsApp());
         
-                // 🛑 BIND THE NEW FILTER SPINNER
         spinnerFilterPayer = findViewById(R.id.spinnerFilterPayer);
         spinnerFilterPayer.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
@@ -159,9 +165,7 @@ public class MainActivity extends AppCompatActivity {
             public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
         
-        // 🛑 UPDATE THE CLICK LISTENER SO IT WORKS WITH THE FILTER
         lvExpenses.setOnItemClickListener((parent, view, position, id) -> {
-            // Get the item directly from the screen, not the raw list!
             Expense clickedExpense = (Expense) parent.getItemAtPosition(position);
             showExpenseDetailsDialog(clickedExpense);
         });
@@ -248,7 +252,6 @@ public class MainActivity extends AppCompatActivity {
                   
                   Collections.sort(expenseList, (e1, e2) -> Long.compare(e2.getTimestamp(), e1.getTimestamp()));
                   
-                  // 🛑 CHANGE THIS: Send the data through our filter first!
                   updateExpenseListUI();
 
                   // Auto-update calculations when new data comes in
@@ -272,10 +275,9 @@ public class MainActivity extends AppCompatActivity {
         if (name.isEmpty()) return;
 
         for (Member m : memberList) {
-        // equalsIgnoreCase makes sure "Alice" and "alice" are treated as the same
         if (m.getName().equalsIgnoreCase(name)) {
             Toast.makeText(this, "This member already exists!", Toast.LENGTH_SHORT).show();
-            return; // Stop the code here, do not save to Firebase
+            return; 
             }
         }
 
@@ -341,7 +343,7 @@ public class MainActivity extends AppCompatActivity {
         Expense newExpense = new Expense(expenseId, title, amount, selectedPayer.getId(), selectedPayer.getName(), involved, selectedCategory);
         newExpense.setTimestamp(System.currentTimeMillis());
 
-        // 🛑 PURE FIRESTORE SAVE LOGIC
+        // PURE FIRESTORE SAVE LOGIC
         db.collection("trips").document(currentTripId).collection("expenses").document(expenseId)
           .set(newExpense)
           .addOnSuccessListener(aVoid -> {
@@ -360,62 +362,81 @@ public class MainActivity extends AppCompatActivity {
 
     // --- UI HELPERS ---
 
+    // 🛑 FULLY UPGRADED TO HANDLE SUSPENDED MEMBERS
     private void refreshMembersUI() {
-        StringBuilder names = new StringBuilder("Members: ");
+        llMemberList.removeAllViews();
         llInvolvedMembers.removeAllViews();
 
+        List<Member> activeSpinnerList = new ArrayList<>();
+        activeSpinnerList.add(new Member("-1", "-- Select Payer --"));
+
         for (Member m : memberList) {
-            names.append(m.getName()).append(", ");
-            CheckBox cb = new CheckBox(this);
-            cb.setText(m.getName());
-            cb.setTag(m.getId()); // Store string ID
-            cb.setChecked(true);
-            llInvolvedMembers.addView(cb);
+            // 1. Draw the Member in the "Members" tab
+            TextView tv = new TextView(this);
+            tv.setTextSize(16f);
+            tv.setPadding(0, 12, 0, 12);
+            tv.setTypeface(Typeface.create("monospace", Typeface.BOLD));
+            
+            if (m.isActive()) {
+                tv.setText("• " + m.getName());
+                tv.setTextColor(ContextCompat.getColor(this, R.color.purple_primary));
+                
+                // Add to Checkboxes for NEW expenses ONLY if active
+                CheckBox cb = new CheckBox(this);
+                cb.setText(m.getName());
+                cb.setTag(m.getId()); 
+                cb.setChecked(true);
+                llInvolvedMembers.addView(cb);
+
+                // Add to Payer Spinner ONLY if active
+                activeSpinnerList.add(m);
+            } else {
+                // Suspended Member UI
+                tv.setText("• " + m.getName() + " (Went Home)");
+                tv.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+                // Add a cool strike-through text effect!
+                tv.setPaintFlags(tv.getPaintFlags() | android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);
+            }
+
+            // Click their name to suspend/reactivate them!
+            if (isAdmin) {
+                tv.setOnClickListener(v -> showMemberOptionsDialog(m));
+            }
+            llMemberList.addView(tv);
         }
 
         if (memberList.isEmpty()) {
-            tvMemberList.setText("Members: None");
-        } else {
-            tvMemberList.setText(names.substring(0, names.length() - 2));
+            TextView tvEmpty = new TextView(this);
+            tvEmpty.setText("No members yet.");
+            llMemberList.addView(tvEmpty);
         }
 
-        // Create a separate list just for the Spinner
-        List<Member> spinnerList = new ArrayList<>();
-        // Add our dummy "Select Payer" item at the very top (Index 0)
-        spinnerList.add(new Member("-1", "-- Select Payer --")); 
-        // Then add all the real members below it
-        spinnerList.addAll(memberList);
-
-        ArrayAdapter<Member> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, spinnerList);
+        // Apply ONLY Active Members to the new Expense screen
+        ArrayAdapter<Member> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, activeSpinnerList);
         spinnerPayer.setAdapter(adapter);
 
-                // 🛑 ADD THIS: Set up the Filter Spinner options
+        // --- FILTER SPINNER ---
+        // We keep EVERYONE in the filter so you can still see past history!
         List<Member> filterList = new ArrayList<>();
-        filterList.add(new Member("-2", "Filter: All")); // Default option
-        filterList.addAll(memberList);
-
-        // Remember what they currently have selected so it doesn't jump back to "All" randomly
-        int currentFilterPos = spinnerFilterPayer.getSelectedItemPosition();
+        filterList.add(new Member("-2", "Filter: All")); 
+        filterList.addAll(memberList); 
         
+        int currentFilterPos = spinnerFilterPayer.getSelectedItemPosition();
         ArrayAdapter<Member> filterAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, filterList);
         spinnerFilterPayer.setAdapter(filterAdapter);
-        
         if (currentFilterPos >= 0 && currentFilterPos < filterList.size()) {
             spinnerFilterPayer.setSelection(currentFilterPos);
         }
     }
 
     private void showExpenseDetailsDialog(Expense expense) {
-        // 1. Inflate our custom premium layout
         View view = getLayoutInflater().inflate(R.layout.dialog_expense_details, null);
 
-        // 2. Link the XML elements to Java
         TextView tvDialogTitle = view.findViewById(R.id.tvDialogTitle);
         TextView tvDialogAmount = view.findViewById(R.id.tvDialogAmount);
         TextView tvDialogPayer = view.findViewById(R.id.tvDialogPayer);
         TextView tvDialogSplitMembers = view.findViewById(R.id.tvDialogSplitMembers);
 
-        // 3. Populate the data
         tvDialogTitle.setText(expense.getTitle());
         tvDialogAmount.setText("₹" + String.format("%.2f", expense.getAmount()));
         tvDialogPayer.setText("Paid by " + expense.getPayerName());
@@ -426,12 +447,10 @@ public class MainActivity extends AppCompatActivity {
         }
         tvDialogSplitMembers.setText(involvedNames.toString().trim());
 
-        // 4. Build the premium Material Dialog
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
                .setView(view)
                .setPositiveButton("Close", null);
 
-        // Only show Edit/Delete if the user is the Admin
         if (isAdmin) {
             builder.setNeutralButton("Edit", (dialog, which) -> loadExpenseForEditing(expense))
                    .setNegativeButton("Delete", (dialog, which) -> deleteExpenseConfirm(expense));
@@ -490,11 +509,9 @@ public class MainActivity extends AppCompatActivity {
         for (Member m : memberList) balances.put(m.getId(), 0.0);
 
         for (Expense e : expenseList) {
-            // Give payer positive balance
             double currentPayerBal = balances.containsKey(e.getPayerId()) ? balances.get(e.getPayerId()) : 0.0;
             balances.put(e.getPayerId(), currentPayerBal + e.getAmount());
 
-            // Subtract split share from everyone involved
             double splitShare = e.getAmount() / e.getInvolvedMembers().size();
             for (Member involved : e.getInvolvedMembers()) {
                 if (balances.containsKey(involved.getId())) {
@@ -576,7 +593,6 @@ public class MainActivity extends AppCompatActivity {
     
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Create a "Share" button in the top right Action Bar
         menu.add(0, 1, 0, "Share Code").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         return true;
     }
@@ -584,14 +600,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == 1) {
-            // Inflate our custom QR layout
             View view = getLayoutInflater().inflate(R.layout.dialog_share_code, null);
             ImageView ivQrCode = view.findViewById(R.id.ivQrCode);
             TextView tvShareCode = view.findViewById(R.id.tvShareCode);
 
             tvShareCode.setText(shareCode);
 
-            // Generate the QR Code Bitmap
             try {
                 BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
                 Bitmap bitmap = barcodeEncoder.encodeBitmap(shareCode, BarcodeFormat.QR_CODE, 600, 600);
@@ -600,7 +614,6 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            // Show the Dialog
             new AlertDialog.Builder(this)
                 .setTitle("Share Code")
                 .setView(view)
@@ -614,13 +627,11 @@ public class MainActivity extends AppCompatActivity {
     private void updateSummaryTable() {
         TableLayout tableSummary = findViewById(R.id.tableSummary);
         
-        // 1. Clear old data rows (but keep the Header at index 0)
         int count = tableSummary.getChildCount();
         for (int i = count - 1; i > 0; i--) {
             tableSummary.removeViewAt(i);
         }
 
-        // 2. Set up variables for the math
         Map<String, Double> totalPaid = new HashMap<>();
         Map<String, Double> totalShare = new HashMap<>();
 
@@ -629,14 +640,11 @@ public class MainActivity extends AppCompatActivity {
             totalShare.put(m.getId(), 0.0);
         }
 
-        // 3. Calculate Paid & Share for every expense
         for (Expense e : expenseList) {
-            // Add to the Payer's total
             if (totalPaid.containsKey(e.getPayerId())) {
                 totalPaid.put(e.getPayerId(), totalPaid.get(e.getPayerId()) + e.getAmount());
             }
 
-            // Split the share among involved members
             if (e.getInvolvedMembers() != null && !e.getInvolvedMembers().isEmpty()) {
                 double splitAmount = e.getAmount() / e.getInvolvedMembers().size();
                 for (Member m : e.getInvolvedMembers()) {
@@ -647,23 +655,20 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // 4. Build the UI Rows dynamically
         for (Member m : memberList) {
             double paid = totalPaid.get(m.getId());
             double share = totalShare.get(m.getId());
             double balance = paid - share;
 
             TableRow row = new TableRow(this);
-            row.setPadding(0, 16, 0, 16); // Premium vertical spacing
+            row.setPadding(0, 16, 0, 16); 
 
-            // Column 1: Member Name
             TextView tvName = new TextView(this);
             tvName.setText(m.getName());
             tvName.setTextColor(ContextCompat.getColor(this, R.color.purple_primary));
             tvName.setTypeface(Typeface.create("monospace", Typeface.BOLD));
             tvName.setTextSize(14f);
 
-            // Column 2: Total Paid
             TextView tvPaid = new TextView(this);
             tvPaid.setText(String.format("₹%.2f", paid));
             tvPaid.setTextColor(ContextCompat.getColor(this, R.color.text_dark));
@@ -671,7 +676,6 @@ public class MainActivity extends AppCompatActivity {
             tvPaid.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
             tvPaid.setTextSize(12f);
 
-            // Column 3: Total Share
             TextView tvShare = new TextView(this);
             tvShare.setText(String.format("₹%.2f", share));
             tvShare.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
@@ -679,36 +683,29 @@ public class MainActivity extends AppCompatActivity {
             tvShare.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
             tvShare.setTextSize(12f);
 
-            // Column 4: Balance (Color Coded!)
             TextView tvBalance = new TextView(this);
             tvBalance.setGravity(Gravity.END);
             tvBalance.setTypeface(Typeface.create("monospace", Typeface.NORMAL)); 
             tvBalance.setTextSize(12f);
 
             if (balance > 0.01) {
-                // They paid more than their share: They get money BACK (Green)
                 tvBalance.setTextColor(Color.parseColor("#388E3C")); 
                 tvBalance.setText("+" + String.format("₹%.2f", balance));
             } else if (balance < -0.01) {
-                // They used more than they paid: They OWE money (Red)
                 tvBalance.setTextColor(Color.parseColor("#D32F2F")); 
                 tvBalance.setText(String.format("₹%.2f", balance)); 
             } else {
-                // Perfect zero balance
                 tvBalance.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
                 tvBalance.setText("₹0.00");
             }
 
-            // Add all columns to the row
             row.addView(tvName);
             row.addView(tvPaid);
             row.addView(tvShare);
             row.addView(tvBalance);
 
-            // Add row to table
             tableSummary.addView(row);
 
-            // Add a thin grey divider line under the row
             View divider = new View(this);
             TableRow.LayoutParams params = new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 1);
             params.span = 4;
@@ -729,19 +726,16 @@ public class MainActivity extends AppCompatActivity {
         NoteAdapter noteAdapter = new NoteAdapter(this, noteList);
         lvNotes.setAdapter(noteAdapter);
 
-        // Listen for a Long-Press on any note
         lvNotes.setOnItemLongClickListener((parent, view1, position, id) -> {
             Note selectedNote = noteList.get(position);
             showNoteOptionsDialog(selectedNote);
             return true; 
         });
 
-        // 1. Build and show the pop-up
         androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setView(view)
                 .show();
 
-        // 2. Fetch Notes from Firebase instantly
         db.collection("trips").document(currentTripId).collection("notes")
           .orderBy("timestamp") 
           .addSnapshotListener((value, error) -> {
@@ -752,14 +746,12 @@ public class MainActivity extends AppCompatActivity {
                   }
                   noteAdapter.notifyDataSetChanged();
                   
-                  // Auto-scroll to the newest note!
                   if(noteAdapter.getCount() > 0) {
                       lvNotes.setSelection(noteAdapter.getCount() - 1);
                   }
               }
           });
 
-        // 3. Save a new Note
         btnSaveNote.setOnClickListener(v -> {
             String text = etNewNote.getText().toString().trim();
             if (!text.isEmpty()) {
@@ -878,17 +870,15 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // 1. Create arrays for the checklist
         String[] namesArray = new String[memberList.size()];
         boolean[] checkedItems = new boolean[memberList.size()];
         for (int i = 0; i < memberList.size(); i++) {
             namesArray[i] = memberList.get(i).getName();
-            checkedItems[i] = false; // Default to unchecked
+            checkedItems[i] = false; 
         }
 
         List<Member> selectedGroup = new ArrayList<>();
 
-        // 2. Show the Material Multi-Choice Checkbox Dialog
         new MaterialAlertDialogBuilder(this)
             .setTitle("Select Family Members")
             .setMultiChoiceItems(namesArray, checkedItems, (dialog, which, isChecked) -> {
@@ -903,7 +893,7 @@ public class MainActivity extends AppCompatActivity {
                 if (selectedGroup.isEmpty()) {
                     Toast.makeText(this, "Select at least one member", Toast.LENGTH_SHORT).show();
                 } else {
-                    showGroupExpensesDialog(selectedGroup); // Run the math!
+                    showGroupExpensesDialog(selectedGroup); 
                 }
             })
             .setNegativeButton("Cancel", null)
@@ -918,7 +908,6 @@ public class MainActivity extends AppCompatActivity {
         TextView tvGroupShare = view.findViewById(R.id.tvGroupShare);
         TextView tvGroupBalance = view.findViewById(R.id.tvGroupBalance);
 
-        // 1. Build the Group Name String
         StringBuilder groupNames = new StringBuilder();
         List<String> groupIds = new ArrayList<>();
         for (Member m : group) {
@@ -930,14 +919,11 @@ public class MainActivity extends AppCompatActivity {
         double totalPaid = 0.0;
         double totalShare = 0.0;
 
-        // 2. Do the heavy lifting: Calculate the group's exact share and payments
         for (Expense e : expenseList) {
-            // A. Did anyone in this family pay for this?
             if (groupIds.contains(e.getPayerId())) {
                 totalPaid += e.getAmount();
             }
 
-            // B. How much of this expense belongs to this family?
             double groupShareOfThisExpense = 0.0;
             if (e.getInvolvedMembers() != null && !e.getInvolvedMembers().isEmpty()) {
                 double perPersonShare = e.getAmount() / e.getInvolvedMembers().size();
@@ -949,7 +935,6 @@ public class MainActivity extends AppCompatActivity {
             }
             totalShare += groupShareOfThisExpense;
 
-            // C. If the family was involved in this expense, add it to the UI list!
             if (groupShareOfThisExpense > 0 || groupIds.contains(e.getPayerId())) {
                 LinearLayout row = new LinearLayout(this);
                 row.setOrientation(LinearLayout.HORIZONTAL);
@@ -984,17 +969,16 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // 3. Final calculations and UI formatting
         double balance = totalPaid - totalShare;
 
         tvGroupPaid.setText("Total Paid: ₹" + String.format("%.2f", totalPaid));
         tvGroupShare.setText("Total Share: ₹" + String.format("%.2f", totalShare));
         
         if (balance > 0.01) {
-            tvGroupBalance.setTextColor(Color.parseColor("#388E3C")); // Green
+            tvGroupBalance.setTextColor(Color.parseColor("#388E3C")); 
             tvGroupBalance.setText("Net Balance: +₹" + String.format("%.2f", balance) + "\n(Family Gets Back)");
         } else if (balance < -0.01) {
-            tvGroupBalance.setTextColor(Color.parseColor("#D32F2F")); // Red
+            tvGroupBalance.setTextColor(Color.parseColor("#D32F2F")); 
             tvGroupBalance.setText("Net Balance: ₹" + String.format("%.2f", balance) + "\n(Family Owes)");
         } else {
             tvGroupBalance.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
@@ -1029,7 +1013,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showEditNoteDialog(Note note) {
         com.google.android.material.textfield.TextInputLayout layout = new com.google.android.material.textfield.TextInputLayout(this);
-        int padding = (int) (20 * getResources().getDisplayMetrics().density); // 20dp padding
+        int padding = (int) (20 * getResources().getDisplayMetrics().density); 
         layout.setPadding(padding, padding / 2, padding, 0);
         
         com.google.android.material.textfield.TextInputEditText input = new com.google.android.material.textfield.TextInputEditText(this);
@@ -1164,10 +1148,8 @@ public class MainActivity extends AppCompatActivity {
         PieChart pieChart = findViewById(R.id.pieChart);
         Map<String, Float> categoryTotals = new HashMap<>();
 
-        // 1. Add up all expenses by category
         for (Expense e : expenseList) {
             String cat = e.getCategory();
-            // Ignore payments and empty categories so they don't mess up the chart!
             if (cat == null || cat.equals("✅ Payment") || cat.equals("-- Select Category --")) {
                 continue; 
             }
@@ -1176,31 +1158,26 @@ public class MainActivity extends AppCompatActivity {
             categoryTotals.put(cat, currentTotal + (float) e.getAmount());
         }
 
-        // 2. If there are no expenses yet, clear the chart
         if (categoryTotals.isEmpty()) {
             pieChart.clear();
             return;
         }
 
-        // 3. Convert the totals into Pie Chart "Slices"
         List<PieEntry> entries = new ArrayList<>();
         for (Map.Entry<String, Float> entry : categoryTotals.entrySet()) {
-            // entry.getKey() is the category name (e.g., "🍔 Food & Drinks")
             entries.add(new PieEntry(entry.getValue(), entry.getKey()));
         }
 
-        // 4. Style the Chart beautifully
         PieDataSet dataSet = new PieDataSet(entries, "");
         
-        // 🛑 THE COLOR FIX: Create a custom list of 7 distinct, vibrant Material colors
         ArrayList<Integer> customColors = new ArrayList<>();
-        customColors.add(Color.parseColor("#F44336")); // Red
-        customColors.add(Color.parseColor("#2196F3")); // Blue
-        customColors.add(Color.parseColor("#4CAF50")); // Green
-        customColors.add(Color.parseColor("#FFC107")); // Amber
-        customColors.add(Color.parseColor("#9C27B0")); // Purple
-        customColors.add(Color.parseColor("#FF9800")); // Orange
-        customColors.add(Color.parseColor("#00BCD4")); // Cyan
+        customColors.add(Color.parseColor("#F44336")); 
+        customColors.add(Color.parseColor("#2196F3")); 
+        customColors.add(Color.parseColor("#4CAF50")); 
+        customColors.add(Color.parseColor("#FFC107")); 
+        customColors.add(Color.parseColor("#9C27B0")); 
+        customColors.add(Color.parseColor("#FF9800")); 
+        customColors.add(Color.parseColor("#00BCD4")); 
         dataSet.setColors(customColors);
 
         dataSet.setValueTextSize(14f);
@@ -1210,23 +1187,20 @@ public class MainActivity extends AppCompatActivity {
         PieData data = new PieData(dataSet);
         pieChart.setData(data);
         
-        // Premium UI tweaks
         pieChart.getDescription().setEnabled(false);
         pieChart.setCenterText("Trip\nExpenses");
         pieChart.setCenterTextSize(16f);
         pieChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
         pieChart.setDrawEntryLabels(false); 
         
-        // 🛑 THE LEGEND FIX: Force it to wrap properly with extra spacing
         com.github.mikephil.charting.components.Legend legend = pieChart.getLegend();
         legend.setWordWrapEnabled(true);
         legend.setHorizontalAlignment(com.github.mikephil.charting.components.Legend.LegendHorizontalAlignment.CENTER);
         legend.setTextSize(12f);
         legend.setFormSize(12f);
-        legend.setXEntrySpace(15f); // Space between items side-to-side
-        legend.setYEntrySpace(10f); // Space between rows top-to-bottom
+        legend.setXEntrySpace(15f); 
+        legend.setYEntrySpace(10f); 
         
-        // Add padding to the bottom of the pie so it doesn't overlap the legend!
         pieChart.setExtraBottomOffset(30f); 
         
         pieChart.animateY(1000); 
@@ -1245,10 +1219,8 @@ public class MainActivity extends AppCompatActivity {
         List<Expense> filteredList = new ArrayList<>();
 
         if (selectedFilter.getId().equals("-2")) {
-            // "Filter: All" is selected, so show everything!
             filteredList.addAll(expenseList);
         } else {
-            // Loop through and only grab the expenses paid by the selected person
             for (Expense e : expenseList) {
                 if (e.getPayerId().equals(selectedFilter.getId())) {
                     filteredList.add(e);
@@ -1256,7 +1228,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Draw the filtered list onto the screen
         ExpenseAdapter adapter = new ExpenseAdapter(this, filteredList);
         lvExpenses.setAdapter(adapter);
     }
@@ -1267,19 +1238,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateDayWiseSummary() {
         LinearLayout llDayWiseSummary = findViewById(R.id.llDayWiseSummary);
-        llDayWiseSummary.removeAllViews(); // Clear old data
+        llDayWiseSummary.removeAllViews(); 
 
         if (expenseList.isEmpty()) {
-            return; // Nothing to show yet
+            return; 
         }
 
-        // 1. Group expenses by calendar date (yyyy-MM-dd)
         Map<String, Double> dailyTotals = new HashMap<>();
         java.text.SimpleDateFormat sortableFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
         java.text.SimpleDateFormat displayFormat = new java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault());
 
         for (Expense e : expenseList) {
-            // 🛑 CRITICAL: Ignore "Payments" so settling debts doesn't artificially inflate the daily spending!
             if ("✅ Payment".equals(e.getCategory())) {
                 continue;
             }
@@ -1289,27 +1258,22 @@ public class MainActivity extends AppCompatActivity {
             dailyTotals.put(dateKey, currentTotal + e.getAmount());
         }
 
-        // 2. Sort the dates chronologically
         List<String> sortedDates = new ArrayList<>(dailyTotals.keySet());
         Collections.sort(sortedDates); 
 
-        // 3. Build the UI rows dynamically
         int dayNumber = 1;
         for (String dateKey : sortedDates) {
             double total = dailyTotals.get(dateKey);
 
-            // Format the date to look nice (e.g., "Jun 04")
             String niceDate = dateKey;
             try {
                 niceDate = displayFormat.format(sortableFormat.parse(dateKey));
             } catch (Exception ignored) {}
 
-            // Create the Row
             LinearLayout row = new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setPadding(0, 16, 0, 16); // Nice vertical padding
+            row.setPadding(0, 16, 0, 16); 
 
-            // Left side: "Day 1 (Jun 04)"
             TextView tvDay = new TextView(this);
             tvDay.setText("Day " + dayNumber + "  (" + niceDate + ")");
             tvDay.setTextColor(ContextCompat.getColor(this, R.color.text_dark));
@@ -1318,19 +1282,16 @@ public class MainActivity extends AppCompatActivity {
             LinearLayout.LayoutParams dayParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
             tvDay.setLayoutParams(dayParams);
 
-            // Right side: Amount
             TextView tvTotal = new TextView(this);
             tvTotal.setText(String.format("₹%.2f", total));
             tvTotal.setTextColor(ContextCompat.getColor(this, R.color.purple_primary));
             tvTotal.setTextSize(14f);
             tvTotal.setTypeface(Typeface.create("monospace", Typeface.BOLD));
 
-            // Add text to row
             row.addView(tvDay);
             row.addView(tvTotal);
             llDayWiseSummary.addView(row);
 
-            // Add a thin grey divider line under the row
             View divider = new View(this);
             divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1));
             divider.setBackgroundColor(ContextCompat.getColor(this, R.color.divider_color));
@@ -1338,5 +1299,35 @@ public class MainActivity extends AppCompatActivity {
 
             dayNumber++;
         }
+    }
+    
+    // ==========================================
+    // SUSPEND MEMBER LOGIC
+    // ==========================================
+    
+    private void showMemberOptionsDialog(Member member) {
+        String actionStr = member.isActive() ? "🛑 Suspend (Went Home)" : "✅ Reactivate Member";
+        
+        String[] options = {actionStr};
+
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Manage: " + member.getName())
+            .setItems(options, (dialog, which) -> {
+                if (which == 0) {
+                    // Flip their status
+                    boolean newStatus = !member.isActive();
+                    
+                    // Update it in Firebase
+                    db.collection("trips").document(currentTripId)
+                      .collection("members").document(member.getId())
+                      .update("active", newStatus)
+                      .addOnSuccessListener(aVoid -> {
+                          String msg = newStatus ? " reactivated!" : " suspended.";
+                          Toast.makeText(this, member.getName() + msg, Toast.LENGTH_SHORT).show();
+                      });
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 }
