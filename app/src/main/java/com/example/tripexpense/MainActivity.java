@@ -511,8 +511,18 @@ public class MainActivity extends AppCompatActivity {
             CheckBox cb = (CheckBox) llInvolvedMembers.getChildAt(i);
             if (cb.isChecked()) count++;
         }
-        tvSplitBetweenTitle.setText("Split Between (" + count + " selected):");
+        
+        // 1. Create the styled string with HTML tags
+        String styledText = "Split Between (<font color='#6200EE'><b>" + count + "</b></font> selected):";
+        
+        // 2. Safely apply the HTML formatting to the TextView
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            tvSplitBetweenTitle.setText(android.text.Html.fromHtml(styledText, android.text.Html.FROM_HTML_MODE_LEGACY));
+        } else {
+            tvSplitBetweenTitle.setText(android.text.Html.fromHtml(styledText));
+        }
     }
+
 
     // --- MATH & CALCULATIONS (Updated for String IDs) ---
 
