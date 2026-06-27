@@ -388,6 +388,7 @@ public class MainActivity extends AppCompatActivity {
                 cb.setText(m.getName());
                 cb.setTag(m.getId()); 
                 cb.setChecked(true);
+                cb.setOnCheckedChangeListener((buttonView, isChecked) -> updateSplitCount());
                 llInvolvedMembers.addView(cb);
 
                 // Add to Payer Spinner ONLY if active
@@ -429,6 +430,8 @@ public class MainActivity extends AppCompatActivity {
         if (currentFilterPos >= 0 && currentFilterPos < filterList.size()) {
             spinnerFilterPayer.setSelection(currentFilterPos);
         }
+
+        updateSplitCount();
     }
 
     private void showExpenseDetailsDialog(Expense expense) {
@@ -497,6 +500,18 @@ public class MainActivity extends AppCompatActivity {
         
         btnAddExpense.setText("Update Expense");
         scrollView.scrollTo(0, 0);
+
+        updateSplitCount();
+    }
+
+    private void updateSplitCount() {
+        if (tvSplitBetweenTitle == null || llInvolvedMembers == null) return;
+        int count = 0;
+        for (int i = 0; i < llInvolvedMembers.getChildCount(); i++) {
+            CheckBox cb = (CheckBox) llInvolvedMembers.getChildAt(i);
+            if (cb.isChecked()) count++;
+        }
+        tvSplitBetweenTitle.setText("Split Between (" + count + " selected):");
     }
 
     // --- MATH & CALCULATIONS (Updated for String IDs) ---
@@ -880,13 +895,26 @@ public class MainActivity extends AppCompatActivity {
         }
 
         List<Member> selectedGroup = new ArrayList<>();
+        
+        // 🛑 CREATE A COUNTER ARRAY (Arrays can be safely updated inside listeners)
+        final int[] selectedCount = {0};
 
-        new MaterialAlertDialogBuilder(this)
-            .setTitle("Select Family Members")
-            .setMultiChoiceItems(namesArray, checkedItems, (dialog, which, isChecked) -> {
+        // 🛑 CHANGE TO .create() AND KEEP A REFERENCE TO THE DIALOG
+        androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+            .setTitle("Select Family Members (0)")
+            .setMultiChoiceItems(namesArray, checkedItems, (d, which, isChecked) -> {
                 checkedItems[which] = isChecked;
+                
+                // Recalculate the total checked items
+                selectedCount[0] = 0;
+                for (boolean b : checkedItems) {
+                    if (b) selectedCount[0]++;
+                }
+                
+                // 🛑 LIVE UPDATE THE TITLE!
+                ((androidx.appcompat.app.AlertDialog) d).setTitle("Select Family Members (" + selectedCount[0] + ")");
             })
-            .setPositiveButton("View Summary", (dialog, which) -> {
+            .setPositiveButton("View Summary", (d, which) -> {
                 selectedGroup.clear();
                 for (int i = 0; i < checkedItems.length; i++) {
                     if (checkedItems[i]) selectedGroup.add(memberList.get(i));
@@ -899,8 +927,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             })
             .setNegativeButton("Cancel", null)
-            .show();
+            .create(); 
+            
+        dialog.show(); 
     }
+
 
     private void showGroupExpensesDialog(List<Member> group) {
         View view = getLayoutInflater().inflate(R.layout.dialog_group_expenses, null);
