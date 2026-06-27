@@ -896,12 +896,15 @@ public class MainActivity extends AppCompatActivity {
 
         List<Member> selectedGroup = new ArrayList<>();
         
-        // 🛑 CREATE A COUNTER ARRAY (Arrays can be safely updated inside listeners)
+        // 🛑 CREATE A COUNTER ARRAY
         final int[] selectedCount = {0};
 
-        // 🛑 CHANGE TO .create() AND KEEP A REFERENCE TO THE DIALOG
+        // 1. Create the initial title using HTML (Bold + Purple Color)
+        String initialTitle = "Select Family Members (<font color='#6200EE'><b>0</b></font>)";
+
+        // 2. We use Html.fromHtml() to translate the string into styled text
         androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(this)
-            .setTitle("Select Family Members (0)")
+            .setTitle(android.text.Html.fromHtml(initialTitle))
             .setMultiChoiceItems(namesArray, checkedItems, (d, which, isChecked) -> {
                 checkedItems[which] = isChecked;
                 
@@ -911,8 +914,15 @@ public class MainActivity extends AppCompatActivity {
                     if (b) selectedCount[0]++;
                 }
                 
-                // 🛑 LIVE UPDATE THE TITLE!
-                ((androidx.appcompat.app.AlertDialog) d).setTitle("Select Family Members (" + selectedCount[0] + ")");
+                // 🛑 3. UPDATE THE TITLE LIVE WITH HTML COLOR AND BOLD TAGS
+                String updatedTitle = "Select Family Members (<font color='#6200EE'><b>" + selectedCount[0] + "</b></font>)";
+                
+                // Android requires a slightly different Html command for newer phones
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    ((androidx.appcompat.app.AlertDialog) d).setTitle(android.text.Html.fromHtml(updatedTitle, android.text.Html.FROM_HTML_MODE_LEGACY));
+                } else {
+                    ((androidx.appcompat.app.AlertDialog) d).setTitle(android.text.Html.fromHtml(updatedTitle));
+                }
             })
             .setPositiveButton("View Summary", (d, which) -> {
                 selectedGroup.clear();
