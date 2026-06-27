@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
     
     private Spinner spinnerPayer;
     private LinearLayout llInvolvedMembers;
+    private TextView tvSplitBetweenTitle;
     private NonScrollListView lvExpenses;
     private Spinner spinnerFilterPayer;
     private Button btnAddExpense, btnAddMember;
@@ -122,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
         tvResults = findViewById(R.id.tvResults);
         spinnerPayer = findViewById(R.id.spinnerPayer);
         llInvolvedMembers = findViewById(R.id.llInvolvedMembers);
+        tvSplitBetweenTitle = findViewById(R.id.tvSplitBetweenTitle);
         lvExpenses = findViewById(R.id.lvExpenses);
         btnAddExpense = findViewById(R.id.btnAddExpense);
         btnAddMember = findViewById(R.id.btnAddMember);
