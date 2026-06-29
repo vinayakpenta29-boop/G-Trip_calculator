@@ -165,6 +165,9 @@ public class MainActivity extends AppCompatActivity {
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
                 updateExpenseListUI(); // Re-filter when they pick a new name
             }
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
 
             // 🛑 BIND THE NEW DATE FILTER SPINNER
         spinnerFilterDate = findViewById(R.id.spinnerFilterDate);
@@ -173,10 +176,6 @@ public class MainActivity extends AppCompatActivity {
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
                 updateExpenseListUI(); // Re-filter when they pick a new date
             }
-            @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
-        });
-
             @Override
             public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
