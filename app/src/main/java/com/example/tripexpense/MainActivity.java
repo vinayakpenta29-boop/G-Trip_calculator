@@ -456,15 +456,30 @@ public class MainActivity extends AppCompatActivity {
         TextView tvDialogPayer = view.findViewById(R.id.tvDialogPayer);
         TextView tvDialogSplitMembers = view.findViewById(R.id.tvDialogSplitMembers);
 
+        // Populate basic data
         tvDialogTitle.setText(expense.getTitle());
         tvDialogAmount.setText("₹" + String.format("%.2f", expense.getAmount()));
         tvDialogPayer.setText("Paid by " + expense.getPayerName());
 
+        // 🛑 NEW: Get the exact count of members involved
+        int count = expense.getInvolvedMembers().size();
+        
         StringBuilder involvedNames = new StringBuilder();
+        
+        // 1. Add the bold purple counter header at the top of the list!
+        involvedNames.append("<b>Total Involved:</b> <font color='#6200EE'><b>").append(count).append("</b></font><br>");
+        
+        // 2. Loop through and add all the names below it
         for (Member m : expense.getInvolvedMembers()) {
-            involvedNames.append("• ").append(m.getName()).append("\n");
+            involvedNames.append("• ").append(m.getName()).append("<br>");
         }
-        tvDialogSplitMembers.setText(involvedNames.toString().trim());
+
+        // 3. Apply the HTML formatting so the colors and bold tags work
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            tvDialogSplitMembers.setText(android.text.Html.fromHtml(involvedNames.toString().trim(), android.text.Html.FROM_HTML_MODE_LEGACY));
+        } else {
+            tvDialogSplitMembers.setText(android.text.Html.fromHtml(involvedNames.toString().trim()));
+        }
 
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
                .setView(view)
@@ -477,6 +492,7 @@ public class MainActivity extends AppCompatActivity {
         
         builder.show();
     }
+
 
     private void deleteExpenseConfirm(Expense expense) {
         new AlertDialog.Builder(this)
