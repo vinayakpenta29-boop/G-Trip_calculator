@@ -70,10 +70,12 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvSplitBetweenTitle;
     private NonScrollListView lvExpenses;
     private Spinner spinnerFilterPayer;
+    private Spinner spinnerFilterDate;
     private Button btnAddExpense, btnAddMember;
 
     private List<Member> memberList = new ArrayList<>();
     private List<Expense> expenseList = new ArrayList<>();
+    private List<String> filterDateKeys = new ArrayList<>();
     
     private String editingExpenseId = "-1"; // Strings for Firebase IDs
 
@@ -254,6 +256,7 @@ public class MainActivity extends AppCompatActivity {
                   
                   Collections.sort(expenseList, (e1, e2) -> Long.compare(e2.getTimestamp(), e1.getTimestamp()));
                   
+                  refreshDateFilterUI();
                   updateExpenseListUI();
 
                   // Auto-update calculations when new data comes in
@@ -1266,24 +1269,35 @@ public class MainActivity extends AppCompatActivity {
     // ==========================================
 
     private void updateExpenseListUI() {
-        if (spinnerFilterPayer.getSelectedItem() == null) return;
+        if (spinnerFilterPayer == null || spinnerFilterPayer.getSelectedItem() == null) return;
         
-        Member selectedFilter = (Member) spinnerFilterPayer.getSelectedItem();
-        List<Expense> filteredList = new ArrayList<>();
+        Member selectedFilterPayer = (Member) spinnerFilterPayer.getSelectedItem();
+        
+        // Grab the selected Date safely
+        int datePos = spinnerFilterDate.getSelectedItemPosition();
+        String selectedDateKey = (datePos >= 0 && datePos < filterDateKeys.size()) ? filterDateKeys.get(datePos) : "ALL";
 
-        if (selectedFilter.getId().equals("-2")) {
-            filteredList.addAll(expenseList);
-        } else {
-            for (Expense e : expenseList) {
-                if (e.getPayerId().equals(selectedFilter.getId())) {
-                    filteredList.add(e);
-                }
+        List<Expense> filteredList = new ArrayList<>();
+        java.text.SimpleDateFormat sortableFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+
+        for (Expense e : expenseList) {
+            // A. Does this expense match the selected Payer?
+            boolean matchPayer = selectedFilterPayer.getId().equals("-2") || e.getPayerId().equals(selectedFilterPayer.getId());
+            
+            // B. Does this expense match the selected Date?
+            String eDateKey = sortableFormat.format(new java.util.Date(e.getTimestamp()));
+            boolean matchDate = selectedDateKey.equals("ALL") || eDateKey.equals(selectedDateKey);
+
+            // C. If BOTH match, show it on the screen!
+            if (matchPayer && matchDate) {
+                filteredList.add(e);
             }
         }
 
         ExpenseAdapter adapter = new ExpenseAdapter(this, filteredList);
         lvExpenses.setAdapter(adapter);
     }
+
 
     // ==========================================
     // DAY-WISE SPENDING LOGIC
@@ -1382,5 +1396,52 @@ public class MainActivity extends AppCompatActivity {
             })
             .setNegativeButton("Cancel", null)
             .show();
+    }
+
+    private void refreshDateFilterUI() {
+        if (spinnerFilterDate == null) return;
+        
+        List<String> displayDates = new ArrayList<>();
+        filterDateKeys.clear();
+
+        // 1. Always offer an "All Dates" option
+        displayDates.add("📅 All Dates");
+        filterDateKeys.add("ALL");
+
+        // 2. Find all unique dates in the expense list
+        Map<String, String> uniqueDates = new HashMap<>();
+        java.text.SimpleDateFormat sortableFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+        java.text.SimpleDateFormat displayFormat = new java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault());
+
+        for (Expense e : expenseList) {
+            String dateKey = sortableFormat.format(new java.util.Date(e.getTimestamp()));
+            uniqueDates.put(dateKey, dateKey);
+        }
+
+        // 3. Sort them chronologically
+        List<String> sortedDates = new ArrayList<>(uniqueDates.keySet());
+        Collections.sort(sortedDates);
+
+        // 4. Build the beautiful "Day 1 (Jun 04)" text
+        int dayNumber = 1;
+        for (String dateKey : sortedDates) {
+            String niceDate = dateKey;
+            try {
+                niceDate = displayFormat.format(sortableFormat.parse(dateKey));
+            } catch (Exception ignored) {}
+            
+            displayDates.add("Day " + dayNumber + " (" + niceDate + ")");
+            filterDateKeys.add(dateKey);
+            dayNumber++;
+        }
+
+        // 5. Apply the options to the dropdown without losing their current selection
+        int currentPos = spinnerFilterDate.getSelectedItemPosition();
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, displayDates);
+        spinnerFilterDate.setAdapter(adapter);
+        
+        if (currentPos >= 0 && currentPos < displayDates.size()) {
+            spinnerFilterDate.setSelection(currentPos);
+        }
     }
 }
