@@ -59,6 +59,29 @@
         android:textStyle="bold"
         android:layout_marginBottom="8dp"/>
 
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTotalInvolved"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#EDE7F6" 
+            app:cardCornerRadius="16dp"
+            app:strokeWidth="0dp"
+            android:layout_marginBottom="12dp"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:id="@+id/tvTotalInvolvedBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:text="Total Involved: 0"
+                android:textColor="#6200EE"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </com.google.android.material.card.MaterialCardView>
+
+
     <TextView
         android:id="@+id/tvDialogSplitMembers"
         android:layout_width="match_parent"
