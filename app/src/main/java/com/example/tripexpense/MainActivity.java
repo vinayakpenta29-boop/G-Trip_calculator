@@ -455,26 +455,29 @@ public class MainActivity extends AppCompatActivity {
         TextView tvDialogAmount = view.findViewById(R.id.tvDialogAmount);
         TextView tvDialogPayer = view.findViewById(R.id.tvDialogPayer);
         TextView tvDialogSplitMembers = view.findViewById(R.id.tvDialogSplitMembers);
+        
+        // 🛑 1. BIND THE NEW CURVED BADGE
+        TextView tvTotalInvolvedBadge = view.findViewById(R.id.tvTotalInvolvedBadge);
 
         // Populate basic data
         tvDialogTitle.setText(expense.getTitle());
         tvDialogAmount.setText("₹" + String.format("%.2f", expense.getAmount()));
         tvDialogPayer.setText("Paid by " + expense.getPayerName());
 
-        // 🛑 NEW: Get the exact count of members involved
         int count = expense.getInvolvedMembers().size();
         
+        // 🛑 2. SET THE TEXT INSIDE THE NEW BUBBLE
+        if (tvTotalInvolvedBadge != null) {
+            tvTotalInvolvedBadge.setText("Total Involved: " + count);
+        }
+
         StringBuilder involvedNames = new StringBuilder();
         
-        // 1. Add the bold purple counter header at the top of the list!
-        involvedNames.append("<b>Total Involved:</b> <font color='#6200EE'><b>").append(count).append("</b></font><br>");
-        
-        // 2. Loop through and add all the names below it
+        // 3. Loop through and add only the names (no more HTML header needed!)
         for (Member m : expense.getInvolvedMembers()) {
             involvedNames.append("• ").append(m.getName()).append("<br>");
         }
 
-        // 3. Apply the HTML formatting so the colors and bold tags work
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
             tvDialogSplitMembers.setText(android.text.Html.fromHtml(involvedNames.toString().trim(), android.text.Html.FROM_HTML_MODE_LEGACY));
         } else {
@@ -492,6 +495,7 @@ public class MainActivity extends AppCompatActivity {
         
         builder.show();
     }
+
 
 
     private void deleteExpenseConfirm(Expense expense) {
