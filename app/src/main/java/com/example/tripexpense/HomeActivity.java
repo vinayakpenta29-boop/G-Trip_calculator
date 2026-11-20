@@ -13,7 +13,6 @@ import android.view.MenuItem;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-
 import androidx.activity.result.ActivityResultLauncher;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
@@ -83,17 +82,11 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void showCreateTripDialog() {
-        // 1. Inflate the beautiful new XML layout
         View view = getLayoutInflater().inflate(R.layout.dialog_create_trip, null);
-        
-        // Find the input box inside that layout
         com.google.android.material.textfield.TextInputEditText etTripName = view.findViewById(R.id.etTripName);
 
-        // 2. Build the Premium Material Dialog
         new MaterialAlertDialogBuilder(this)
             .setView(view)
-            // We use background as white rounded rectangle (Material Builder usually handles this, 
-            // but we can set it to ensure a clean card look)
             .setPositiveButton("Create", (dialog, which) -> {
                 String tripName = etTripName.getText().toString().trim();
                 if (!tripName.isEmpty()) {
@@ -106,11 +99,9 @@ public class HomeActivity extends AppCompatActivity {
             .show();
     }
 
-
     private void createTripInCloud(String name) {
-        // Generate a random 8-character hex code for sharing (e.g. "f445a7f8")
         String shareCode = UUID.randomUUID().toString().substring(0, 8);
-        String tripId = db.collection("trips").document().getId(); // Auto-generate Firebase ID
+        String tripId = db.collection("trips").document().getId();
 
         Trip newTrip = new Trip(tripId, name, shareCode, myUserId);
 
@@ -120,12 +111,11 @@ public class HomeActivity extends AppCompatActivity {
           .addOnFailureListener(e -> Toast.makeText(this, "Failed to create trip", Toast.LENGTH_SHORT).show());
     }
 
-        // 1. The QR Scanner Launcher
+    // 1. The QR Scanner Launcher
     private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(
         new ScanContract(),
         result -> {
             if (result.getContents() != null) {
-                // If a QR code was successfully scanned, join the trip automatically!
                 String scannedCode = result.getContents().trim().toLowerCase();
                 joinTripWithCode(scannedCode);
             } else {
@@ -135,11 +125,9 @@ public class HomeActivity extends AppCompatActivity {
 
     // 2. Updated Join Dialog
     private void showJoinTripDialog() {
-        // 1. Inflate the beautiful new layout
         View view = getLayoutInflater().inflate(R.layout.dialog_join_trip, null);
         EditText input = view.findViewById(R.id.etShareCode);
 
-        // 2. Use the Material Builder instead of the old AlertDialog
         new MaterialAlertDialogBuilder(this)
             .setView(view)
             .setPositiveButton("Join", (dialog, which) -> {
@@ -160,18 +148,14 @@ public class HomeActivity extends AppCompatActivity {
             .show();
     }
 
-    
     private void joinTripWithCode(String code) {
-        // Search the cloud for a trip with this exact share code
         db.collection("trips")
           .whereEqualTo("shareCode", code)
           .get()
           .addOnSuccessListener(queryDocumentSnapshots -> {
               if (!queryDocumentSnapshots.isEmpty()) {
-                  // Trip found! Get the document ID
                   String tripId = queryDocumentSnapshots.getDocuments().get(0).getId();
                   
-                  // Add myUserId to the userIds array in the cloud
                   db.collection("trips").document(tripId)
                     .update("userIds", com.google.firebase.firestore.FieldValue.arrayUnion(myUserId))
                     .addOnSuccessListener(aVoid -> Toast.makeText(this, "Successfully Joined!", Toast.LENGTH_SHORT).show());
@@ -182,7 +166,7 @@ public class HomeActivity extends AppCompatActivity {
           .addOnFailureListener(e -> Toast.makeText(this, "Error finding trip", Toast.LENGTH_SHORT).show());
     }
 
-    // 3-DOTS MENU & DELETE TRIP LOGIC
+    // 3-DOTS MENU: MY TRIPS & DELETE TRIP LOGIC
     
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -192,7 +176,11 @@ public class HomeActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_delete_trip) {
+        int id = item.getItemId();
+        if (id == R.id.action_my_trips) {
+            startActivity(new Intent(HomeActivity.this, MyTripsActivity.class));
+            return true;
+        } else if (id == R.id.action_delete_trip) {
             showDeleteTripSelectionDialog();
             return true;
         }
@@ -205,23 +193,18 @@ public class HomeActivity extends AppCompatActivity {
         List<Trip> adminTrips = new ArrayList<>();
         List<String> tripNames = new ArrayList<>();
 
-        // 1. Filter the list: Only keep trips where this user is the Admin
         for (Trip trip : tripList) {
-            // NOTE: If your getter in Trip.java is named differently (like getCreatedBy()), 
-            // change 'getAdminId()' below to match your exact code!
             if (trip.getAdminId() != null && trip.getAdminId().equals(currentUserId)) {
                 adminTrips.add(trip);
                 tripNames.add(trip.getName());
             }
         }
 
-        // 2. If they aren't admin of anything, show a toast and stop.
         if (adminTrips.isEmpty()) {
             Toast.makeText(this, "You are not the Admin of any trips.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 3. Show a premium list dialog of their trips
         String[] namesArray = tripNames.toArray(new String[0]);
         new MaterialAlertDialogBuilder(this)
             .setTitle("Select Trip to Delete")
@@ -238,16 +221,13 @@ public class HomeActivity extends AppCompatActivity {
             .setTitle("Delete " + trip.getName() + "?")
             .setMessage("This will permanently remove the trip for all members. This cannot be undone.")
             .setPositiveButton("Delete", (dialog, which) -> {
-                // Delete the parent trip document from Firebase
                 db.collection("trips").document(trip.getId())
                   .delete()
                   .addOnSuccessListener(aVoid -> {
                       Toast.makeText(this, "Trip deleted permanently", Toast.LENGTH_SHORT).show();
-                      // Your real-time listener will automatically remove the card from the screen!
                   });
             })
             .setNegativeButton("Cancel", null)
             .show();
     }
-
 }
